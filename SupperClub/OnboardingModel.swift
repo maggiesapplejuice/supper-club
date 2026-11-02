@@ -105,6 +105,10 @@ final class OnboardingModel {
     var unopenedPack: [Recipe]?
     var trades: [TradeOffer] = []
     var savedCardIDs: Set<String> = []
+    /// Dishes swiped right on Discover, newest first, waiting for an offer in Trading.
+    var interested: [Recipe] = []
+    /// Chefs the cook saved, newest first.
+    var favoriteChefs: [CookProfile] = []
 
     var pendingCardIDs: Set<String> {
         Set(trades.flatMap { $0.offered.map(\.id) })
@@ -134,6 +138,28 @@ final class OnboardingModel {
 
     func send(offered: [Recipe], requested: Recipe) {
         trades.insert(TradeOffer(offered: offered, requested: requested), at: 0)
+        interested.removeAll { $0 == requested }
+    }
+
+    func markInterested(_ recipe: Recipe) {
+        guard !interested.contains(recipe) else { return }
+        interested.insert(recipe, at: 0)
+    }
+
+    func isFavorite(_ chef: CookProfile) -> Bool {
+        favoriteChefs.contains(chef)
+    }
+
+    func toggleFavorite(_ chef: CookProfile) {
+        if let index = favoriteChefs.firstIndex(of: chef) {
+            favoriteChefs.remove(at: index)
+        } else {
+            favoriteChefs.insert(chef, at: 0)
+        }
+    }
+
+    func removeInterest(_ recipe: Recipe) {
+        interested.removeAll { $0 == recipe }
     }
 
     func cancel(_ trade: TradeOffer) {

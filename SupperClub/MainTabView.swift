@@ -247,6 +247,17 @@ struct ProfileView: View {
                         }
                     }
                 }
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Favorite chefs")
+                        .font(.display(17))
+                        .foregroundStyle(Color.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    FavoriteChefsList(model: model)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.white, in: .rect(cornerRadius: 22))
+                .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.ink, lineWidth: 2) }
             }
             .padding(20)
             .frame(maxWidth: .infinity)

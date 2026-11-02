@@ -17,6 +17,7 @@ struct InspectCardView: View {
                     LiveCardView(recipe: recipe, width: 240, isDraggable: true)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 6)
+                    DishPhotoView(recipe: recipe)
                     titleBlock
                     if !model.restrictions.isEmpty {
                         dietFit
@@ -154,10 +155,11 @@ struct InspectCardView: View {
                         .font(.text(11))
                         .foregroundStyle(Color.gray4)
                 }
+                .accessibilityElement(children: .combine)
+                FavoriteChefButton(model: model, chef: person, size: 26)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 
     private var stats: some View {

@@ -3,6 +3,8 @@ import SwiftUI
 enum DiscoverRoute: Hashable {
     case inspect(Recipe)
     case offer(Recipe)
+    /// The swipe deck, for one city or for every dish when `city` is nil.
+    case swipe(city: String?)
 }
 
 struct DiscoverView: View {
@@ -20,8 +22,6 @@ struct DiscoverView: View {
     @State private var search = ""
     @State private var cuisine: String?
     @State private var feed: [Recipe] = []
-    @State private var visibleID: String?
-    @State private var surpriseCount = 0
     @State private var dietOnly = true
 
     private var results: [Recipe] {
@@ -31,7 +31,8 @@ struct DiscoverView: View {
                 && (!dietOnly || recipe.fits(model.restrictions))
                 && (search.isEmpty
                     || recipe.name.localizedCaseInsensitiveContains(search)
-                    || recipe.cuisine.localizedCaseInsensitiveContains(search))
+                    || recipe.cuisine.localizedCaseInsensitiveContains(search)
+                    || recipe.city.name.localizedCaseInsensitiveContains(search))
         }
     }
 
@@ -42,7 +43,10 @@ struct DiscoverView: View {
                 segmentPicker
                 switch segment {
                 case .discover: discoverContent
-                case .trading: TradingListView(model: model)
+                case .trading:
+                    TradingListView(model: model) { recipe in
+                        path.append(.offer(recipe))
+                    }
                 }
             }
             .background(Color.paper.ignoresSafeArea())
@@ -54,7 +58,6 @@ struct DiscoverView: View {
                     .background(Color.paper.ignoresSafeArea())
             }
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: surpriseCount)
         .onAppear {
             if feed.isEmpty {
                 // Cuisines the cook picked come first; rarity stays a surprise within each group.
@@ -75,6 +78,18 @@ struct DiscoverView: View {
                 path.removeAll()
                 segment = .trading
             }
+        case .swipe(let city):
+            SwipeDeckView(
+                model: model,
+                title: city ?? "All dishes",
+                recipes: results.filter { city == nil || $0.city.name == city },
+                onInspect: { path.append(.inspect($0)) },
+                onBack: { path.removeLast() },
+                onOpenTrading: {
+                    path.removeAll()
+                    segment = .trading
+                }
+            )
         }
     }
 
@@ -118,22 +133,8 @@ struct DiscoverView: View {
 
     private var discoverContent: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                InkSearchField(placeholder: "search recipes or cuisines", text: $search)
-                Button(action: surpriseMe) {
-                    HStack(spacing: 5) {
-                        Sparkle().fill(.white).frame(width: 12, height: 12)
-                        Text("Surprise")
-                            .font(.display(13))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .frame(height: 46)
-                    .background(Color.ink, in: .capsule)
-                }
-                .accessibilityLabel("Surprise me with a random recipe")
-            }
-            .padding(.horizontal, 20)
+            InkSearchField(placeholder: "search dishes, cuisines or cities", text: $search)
+                .padding(.horizontal, 20)
 
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
@@ -157,114 +158,32 @@ struct DiscoverView: View {
             .scrollIndicators(.hidden)
             .scrollEdgeFade()
 
-            if results.isEmpty {
-                ContentUnavailableView("No recipes found", systemImage: "magnifyingglass")
-                    .font(.text(14))
-            } else {
-                feedList
-            }
-        }
-    }
-
-    private var feedList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(results) { recipe in
-                    FeedPost(recipe: recipe) {
-                        path.append(.inspect(recipe))
-                    }
-                    .containerRelativeFrame(.vertical)
-                    .scrollTransition(axis: .vertical) { content, phase in
-                        // Cards tip in and out as they pass, then settle when centered.
-                        content
-                            .scaleEffect(phase.isIdentity ? 1 : 0.82)
-                            .rotationEffect(.degrees(phase.value * 5))
-                            .opacity(phase.isIdentity ? 1 : 0.35)
-                    }
-                    .id(recipe.id)
-                }
-            }
-            .scrollTargetLayout()
-        }
-        .scrollTargetBehavior(.paging)
-        .scrollIndicators(.hidden)
-        .scrollPosition(id: $visibleID)
-        .sensoryFeedback(.selection, trigger: visibleID)
-    }
-
-    private func surpriseMe() {
-        guard let pick = results.randomElement() else { return }
-        surpriseCount += 1
-        path.append(.inspect(pick))
-    }
-}
-
-/// One full-height post in the feed: who has it, the card, and a way in.
-private struct FeedPost: View {
-    let recipe: Recipe
-    let onInspect: () -> Void
-
-    var body: some View {
-        GeometryReader { proxy in
-            let cardWidth = min(280, (proxy.size.height - 130) / 1.4)
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
-                    InkGlyphView(emoji: "👩‍🍳", size: 34)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(recipe.owner.name)
-                            .font(.display(14))
-                        Text("wants to trade · \(recipe.cuisine.lowercased())")
-                            .font(.text(12))
-                            .foregroundStyle(Color.gray4)
-                    }
-                    Spacer()
-                }
-                .foregroundStyle(Color.ink)
-                .frame(width: cardWidth)
-                .accessibilityElement(children: .combine)
-
-                Button(action: onInspect) {
-                    LiveCardView(recipe: recipe, width: cardWidth)
-                }
-                .buttonStyle(.plain)
-
-                HStack(spacing: 10) {
-                    Button(action: onInspect) {
-                        Text("Inspect")
-                            .font(.display(14))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 46)
-                            .background(Color.ink, in: .capsule)
-                    }
-                    ShareLink(item: "Check out \(recipe.name) on Supper Club") {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color.ink)
-                            .frame(width: 46, height: 46)
-                            .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
-                    }
-                    .accessibilityLabel("Share")
-                }
-                .frame(width: cardWidth)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            DiscoverGlobe(
+                recipes: results,
+                onInspect: { path.append(.inspect($0)) },
+                onSwipe: { path.append(.swipe(city: $0?.name)) }
+            )
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
         }
     }
 }
 
-/// Outgoing requests. Nothing can answer them until there's a backend, so they stay pending.
+/// Dishes the cook swiped right on, then their outgoing requests.
+/// Nothing can answer requests until there's a backend, so they stay pending.
 private struct TradingListView: View {
     let model: OnboardingModel
+    let onOffer: (Recipe) -> Void
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                if model.trades.isEmpty {
+                if model.interested.isEmpty && model.trades.isEmpty {
                     VStack(spacing: 10) {
                         InkGlyphView(emoji: "🥟", size: 90)
                         Text("No trades yet")
                             .font(.display(20))
-                        Text("Inspect a card in Discover and send your first offer.")
+                        Text("Swipe right on a dish in Discover and it shows up here.")
                             .font(.text(14))
                             .foregroundStyle(Color.gray4)
                             .multilineTextAlignment(.center)
@@ -272,7 +191,18 @@ private struct TradingListView: View {
                     .foregroundStyle(Color.ink)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 50)
-                } else {
+                }
+                if !model.interested.isEmpty {
+                    sectionTitle("Interested", count: model.interested.count)
+                    ForEach(model.interested) { recipe in
+                        InterestedRow(recipe: recipe, onOffer: { onOffer(recipe) }) {
+                            model.removeInterest(recipe)
+                        }
+                    }
+                }
+                if !model.trades.isEmpty {
+                    sectionTitle("Sent requests", count: model.trades.count)
+                        .padding(.top, model.interested.isEmpty ? 0 : 10)
                     ForEach(model.trades) { trade in
                         TradeRow(trade: trade) { model.cancel(trade) }
                     }
@@ -281,6 +211,56 @@ private struct TradingListView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 8)
         }
+    }
+
+    private func sectionTitle(_ title: String, count: Int) -> some View {
+        Text("\(title) · \(count)")
+            .font(.display(17))
+            .foregroundStyle(Color.ink)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+private struct InterestedRow: View {
+    let recipe: Recipe
+    let onOffer: () -> Void
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RecipeCardView(recipe: recipe, width: 72)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(recipe.name)
+                    .font(.display(16))
+                    .foregroundStyle(Color.ink)
+                    .lineLimit(2)
+                Text("\(recipe.owner.shortName) · \(recipe.city.name)")
+                    .font(.text(12))
+                    .foregroundStyle(Color.gray4)
+                HStack(spacing: 8) {
+                    Button(action: onOffer) {
+                        Text("Make an offer")
+                            .font(.display(13))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .frame(height: 36)
+                            .background(Color.ink, in: .capsule)
+                    }
+                    Button(action: onRemove) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color.ink)
+                            .frame(width: 36, height: 36)
+                            .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                    }
+                    .accessibilityLabel("Remove \(recipe.name)")
+                }
+                .padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.ink, lineWidth: 2) }
     }
 }
 

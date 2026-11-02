@@ -1,6 +1,6 @@
 import Foundation
 
-struct CookProfile {
+struct CookProfile: Hashable {
     let name: String
     let detail: String
 
