@@ -11,11 +11,11 @@ struct CollectionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 Text("My Recipe Cards")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.display(30))
                     .foregroundStyle(Color.brandText)
                 if recipes.isEmpty {
                     Text("Cards you collect will show up here.")
-                        .font(.system(size: 15))
+                        .font(.text(15))
                         .foregroundStyle(Color.gray4)
                 } else {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())], spacing: 14) {
@@ -31,6 +31,7 @@ struct CollectionView: View {
             }
             .padding(20)
         }
+        .background(Color.paper)
         .sheet(item: $detailRecipe) { recipe in
             RarityDetailView(recipe: recipe)
         }

@@ -4,20 +4,25 @@ struct ContentView: View {
     @State private var model = OnboardingModel()
 
     var body: some View {
-        if let pack = model.unopenedPack {
-            PackOpeningView(recipes: pack, onFinish: model.collectPack)
-        } else if model.isFinished {
-            CollectionView(recipes: model.collection)
-        } else {
-            NavigationStack(path: $model.path) {
-                LoginView(model: model)
-                    .navigationBarHidden(true)
-                    .navigationDestination(for: OnboardingRoute.self) { route in
-                        destination(for: route)
-                            .navigationBarHidden(true)
-                    }
+        Group {
+            if let pack = model.unopenedPack {
+                PackOpeningView(recipes: pack, onFinish: model.collectPack)
+            } else if model.isFinished {
+                CollectionView(recipes: model.collection)
+            } else {
+                NavigationStack(path: $model.path) {
+                    LoginView(model: model)
+                        .navigationBarHidden(true)
+                        .background(Color.paper.ignoresSafeArea())
+                        .navigationDestination(for: OnboardingRoute.self) { route in
+                            destination(for: route)
+                                .navigationBarHidden(true)
+                                .background(Color.paper.ignoresSafeArea())
+                        }
+                }
             }
         }
+        .preferredColorScheme(.light)
     }
 
     @ViewBuilder

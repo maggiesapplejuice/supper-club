@@ -35,8 +35,9 @@ struct PackOpeningView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-            backgroundGlow
+            (isDark ? Color.black : Color.paper)
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.4), value: isDark)
             switch stage {
             case .sealed, .bursting: packStage
             case .reveal: revealStage
@@ -45,41 +46,30 @@ struct PackOpeningView: View {
             SparkLayer(sparks: sparks)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-            Color.white
+            (isDark ? Color.white : Color.ink)
                 .opacity(flash)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
-        .preferredColorScheme(.dark)
         .onAppear { haptics.prepare() }
         .sheet(item: $detailRecipe) { recipe in
             RarityDetailView(recipe: recipe)
-                .preferredColorScheme(.light)
         }
     }
 
     // MARK: Background
 
-    @ViewBuilder
-    private var backgroundGlow: some View {
-        let color: Color = switch stage {
-        case .sealed, .bursting: .brandPrimary
-        case .reveal: isFaceUp ? current.tier.color : RarityTier.legendary.color
-        case .summary: RarityTier.legendary.color
-        }
-        RadialGradient(colors: [color.opacity(0.55), .clear], center: .center, startRadius: 20, endRadius: 340)
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.4), value: index)
-            .animation(.easeInOut(duration: 0.4), value: isFaceUp)
-    }
+    /// The screen inverts to black only for the Legendary, so the foil is the one burst of color.
+    private var isDark: Bool { stage == .reveal && current.tier.isHolographic }
+    private var foreground: Color { isDark ? .white : .ink }
 
     // MARK: Sealed pack
 
     private var packStage: some View {
         VStack(spacing: 28) {
             Text(stage == .sealed ? "Your starter pack" : " ")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.display(26))
+                .foregroundStyle(Color.ink)
             ZStack {
                 deckInsidePack
                 tearablePack
@@ -88,8 +78,8 @@ struct PackOpeningView: View {
             }
             .frame(width: packSize.width, height: packSize.height)
             Label("Swipe across the top to tear it open", systemImage: "hand.draw")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.text(14))
+                .foregroundStyle(Color.gray4)
                 .opacity(stage == .sealed && tear == 0 ? 1 : 0)
         }
     }
@@ -129,18 +119,15 @@ struct PackOpeningView: View {
                 .rotationEffect(.degrees(stripGone ? -60 : 0))
                 .opacity(stripGone ? 0 : 1)
 
-                // Light spilling out of the tear.
+                // The black slit opening along the tear.
                 Capsule()
-                    .fill(Color(hex: 0xFFE9A8))
-                    .frame(width: width * tear, height: 4)
-                    .blur(radius: 3)
-                    .shadow(color: Color(hex: 0xFFD166), radius: 14 * tear)
+                    .fill(Color.ink)
+                    .frame(width: width * tear, height: 5)
                     .offset(y: stripHeight - 2)
             }
             .frame(width: width, height: packSize.height, alignment: .topLeading)
         }
         .scaleEffect(1 + tear * 0.03)
-        .shadow(color: .black.opacity(0.5), radius: 18, y: 12)
         .contentShape(.rect)
         .gesture(tearGesture)
         .accessibilityElement()
@@ -172,7 +159,7 @@ struct PackOpeningView: View {
         stage = .bursting
         tear = 1
         haptics.packBurst()
-        spawnBurst(color: Color(hex: 0xFFD166), count: 70)
+        spawnBurst(color: .ink, count: 70)
         if !reduceMotion { flash = 0.85 }
         withAnimation(.easeOut(duration: 0.45)) {
             flash = 0
@@ -193,8 +180,8 @@ struct PackOpeningView: View {
     private var revealStage: some View {
         VStack(spacing: 20) {
             Text("\(index + 1) of \(recipes.count)")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.text(14))
+                .foregroundStyle(foreground)
             ZStack {
                 if index + 1 < recipes.count {
                     CardBackView(width: cardWidth)
@@ -221,10 +208,10 @@ struct PackOpeningView: View {
                         width: cardWidth,
                         extraTilt: CGPoint(x: dragX / 180, y: 0)
                     )
-                    .shadow(color: current.tier.color.opacity(0.8), radius: 30)
+                    .shadow(color: .white.opacity(current.tier.isHolographic ? 0.5 : 0), radius: 26)
                 } else {
                     CardBackView(width: cardWidth)
-                        .shadow(color: RarityTier.legendary.color, radius: isBuildingUp ? 50 : 26)
+                        .shadow(color: .white.opacity(0.8), radius: isBuildingUp ? 44 : 20)
                 }
             }
             .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
@@ -252,24 +239,21 @@ struct PackOpeningView: View {
     private var cardCaption: some View {
         VStack(spacing: 6) {
             if isFaceUp {
-                Text(current.tier.name.uppercased())
-                    .font(.system(size: 14, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(current.tier.color)
-                    .brightness(0.25)
+                Text(current.tier.name)
+                    .font(.display(28))
+                    .foregroundStyle(foreground)
                 Text(index + 1 < recipes.count
                     ? "Swipe for the next card · Tap to see its rarity"
                     : "Swipe to finish · Tap to see its rarity")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.text(13))
+                    .foregroundStyle(foreground.opacity(0.7))
             } else {
-                Text("SOMETHING SPECIAL")
-                    .font(.system(size: 14, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(RarityTier.legendary.color)
+                Text("Something special")
+                    .font(.display(28))
+                    .foregroundStyle(foreground)
                 Text("Tap to flip")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.text(13))
+                    .foregroundStyle(foreground.opacity(0.7))
             }
         }
         .multilineTextAlignment(.center)
@@ -333,8 +317,10 @@ struct PackOpeningView: View {
             isFaceUp = true
             flipAngle = -90
             haptics.legendaryHit()
-            spawnBurst(color: Color(hex: 0xFFE9A8), count: 110)
-            spawnBurst(color: Color(hex: 0x8C7BFF), count: 40)
+            spawnBurst(color: .white, count: 80)
+            for color in HolographicFoil.spectrum.prefix(6) {
+                spawnBurst(color: color, count: 14)
+            }
             if !reduceMotion { flash = 0.9 }
             withAnimation(.easeOut(duration: 0.6)) { flash = 0 }
             withAnimation(.spring(duration: 0.55, bounce: 0.4)) { flipAngle = 0 }
@@ -348,11 +334,11 @@ struct PackOpeningView: View {
         VStack(spacing: 18) {
             VStack(spacing: 4) {
                 Text("Your starter pack")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.display(26))
+                    .foregroundStyle(Color.ink)
                 Text("Tap a card to see what makes it rare")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.text(14))
+                    .foregroundStyle(foreground.opacity(0.7))
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 12) {
                 ForEach(recipes.reversed()) { recipe in
@@ -378,8 +364,8 @@ struct PackOpeningView: View {
             Spark(
                 origin: center,
                 velocity: CGVector(dx: .random(in: -70...110), dy: .random(in: -180 ... -30)),
-                color: Color(hex: 0xFFD166),
-                size: .random(in: 1.5...3.5),
+                color: .ink,
+                size: .random(in: 3...6),
                 life: .random(in: 0.3...0.6)
             )
         })
@@ -395,7 +381,7 @@ struct PackOpeningView: View {
                 origin: center,
                 velocity: CGVector(dx: cos(angle) * speed, dy: sin(angle) * speed),
                 color: color,
-                size: .random(in: 2...5),
+                size: .random(in: 4...10),
                 life: .random(in: 0.5...1.3)
             )
         })
@@ -420,51 +406,44 @@ private struct PackFoil: View {
     var body: some View {
         let shift = sin(time * 0.8) * 0.35
         ZStack {
+            Color.white
             LinearGradient(
-                colors: [Color(hex: 0xC94A4A), .brandPrimary, Color(hex: 0x6E1F1F)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            LinearGradient(
-                colors: [.clear, .white.opacity(0.32), .clear, .white.opacity(0.14), .clear],
+                colors: [.clear, .black.opacity(0.1), .clear, .black.opacity(0.05), .clear],
                 startPoint: UnitPoint(x: -0.5 + shift, y: 0),
                 endPoint: UnitPoint(x: 1.5 + shift, y: 1)
             )
-            .blendMode(.plusLighter)
-            VStack(spacing: 10) {
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 54))
-                Text("SUPPER CLUB")
-                    .font(.system(size: 22, weight: .bold))
-                    .tracking(4)
-                Text("STARTER PACK")
-                    .font(.system(size: 12, weight: .semibold))
-                    .tracking(3)
-                Text("6 RECIPE CARDS")
-                    .font(.system(size: 11, weight: .medium))
-                    .tracking(2)
-                    .opacity(0.8)
-                    .padding(.top, 24)
+            VStack(spacing: 6) {
+                ChefCharacter(size: 170)
+                Text("Supper Club")
+                    .font(.display(30))
+                Text("starter pack")
+                    .font(.text(15))
+                Text("6 recipe cards")
+                    .font(.text(12))
+                    .foregroundStyle(Color.gray4)
+                    .padding(.top, 8)
             }
-            .foregroundStyle(Color.brandSecondary)
+            .foregroundStyle(Color.ink)
             VStack {
                 CrimpEdge()
                 Spacer()
                 CrimpEdge()
             }
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.ink, lineWidth: 3)
         }
         .frame(width: size.width, height: size.height)
-        .clipShape(.rect(cornerRadius: 4))
+        .clipShape(.rect(cornerRadius: 10))
     }
 }
 
 private struct CrimpEdge: View {
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<52, id: \.self) { _ in
+        HStack(spacing: 3) {
+            ForEach(0..<40, id: \.self) { _ in
                 Rectangle()
-                    .fill(.white.opacity(0.22))
-                    .frame(width: 3, height: 16)
+                    .fill(Color.ink)
+                    .frame(width: 3, height: 14)
             }
         }
         .frame(maxWidth: .infinity)
@@ -499,7 +478,7 @@ private struct SparkLayer: View {
                     )
                     let radius = spark.size * fade
                     let rect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
-                    context.fill(Path(ellipseIn: rect), with: .color(spark.color.opacity(fade)))
+                    context.fill(Sparkle().path(in: rect), with: .color(spark.color.opacity(fade)))
                 }
             }
         }

@@ -39,15 +39,7 @@ enum RarityTier: Int, CaseIterable, Identifiable {
 
     var isHolographic: Bool { self == .legendary }
 
-    var color: Color {
-        switch self {
-        case .common: .gray4
-        case .uncommon: Color(hex: 0x3E7C59)
-        case .rare: Color(hex: 0x2F6DB5)
-        case .epic: Color(hex: 0x7A3FB0)
-        case .legendary: Color(hex: 0xD4A72C)
-        }
-    }
+    var color: Color { self == .common ? .gray4 : .ink }
 }
 
 struct RarityFactor: Identifiable {

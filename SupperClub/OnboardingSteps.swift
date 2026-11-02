@@ -96,25 +96,24 @@ private struct CuisineTile: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Text(cuisine.emoji)
-                    .font(.system(size: 52))
+                InkGlyphView(emoji: cuisine.emoji, size: 84)
                     .frame(maxWidth: .infinity, minHeight: 104)
-                    .background(Color.brandSecondary, in: .rect(cornerRadius: 8))
                 Text(cuisine.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.display(13))
                     .foregroundStyle(Color.brandText)
             }
             .padding(8)
+            .background(isSelected ? Color.gray1 : .white, in: .rect(cornerRadius: 20))
             .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.brandPrimary : Color.gray2, lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? Color.ink : Color.gray2, lineWidth: isSelected ? 2.5 : 2)
             }
             .overlay(alignment: .topTrailing) {
                 if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white, Color.brandPrimary)
-                        .padding(4)
+                    Sparkle()
+                        .fill(Color.ink)
+                        .frame(width: 24, height: 24)
+                        .padding(10)
                 }
             }
         }
@@ -165,11 +164,11 @@ struct LocationStepView: View {
                 .padding(.bottom, 20)
             LocalMapIllustration()
             Text("Discover local recipe trades")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.display(20))
                 .foregroundStyle(Color.brandText)
                 .padding(.top, 28)
             Text("Connect with neighbors and swap authentic home-cooked recipes. Enable location to see what's cooking nearby.")
-                .font(.system(size: 14))
+                .font(.text(14))
                 .foregroundStyle(Color.gray4)
                 .multilineTextAlignment(.center)
                 .padding(.top, 10)
@@ -200,7 +199,7 @@ private struct LocalMapIllustration: View {
                     context.stroke(line, with: .color(Color.brandPrimary.opacity(0.12)), lineWidth: 2)
                 }
             }
-            .background(Color.brandSecondary.opacity(0.5))
+            .background(Color.white)
             HStack(alignment: .top, spacing: 8) {
                 NearbyCard(emoji: "🍝", name: "Pasta al Limone", distance: "0.3 mi")
                 NearbyCard(emoji: "🌮", name: "Chicken Fajitas", distance: "0.5 mi")
@@ -209,16 +208,16 @@ private struct LocalMapIllustration: View {
             .padding(12)
             .frame(maxHeight: .infinity, alignment: .top)
             Label("YOU ARE HERE", systemImage: "mappin.circle")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.display(12))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
-                .background(Color.brandPrimary, in: .capsule)
+                .background(Color.ink, in: .capsule)
                 .padding(.bottom, 16)
         }
         .frame(height: 240)
-        .clipShape(.rect(cornerRadius: 14))
-        .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.gray2) }
+        .clipShape(.rect(cornerRadius: 24))
+        .overlay { RoundedRectangle(cornerRadius: 24).stroke(Color.ink, lineWidth: 2.5) }
         .accessibilityHidden(true)
     }
 }
@@ -230,21 +229,19 @@ private struct NearbyCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(emoji)
-                .font(.system(size: 28))
+            InkGlyphView(emoji: emoji, size: 48)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(Color.brandSecondary, in: .rect(cornerRadius: 6))
             Text(name)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.display(11))
                 .foregroundStyle(Color.brandText)
                 .lineLimit(2, reservesSpace: true)
             Label(distance, systemImage: "mappin")
-                .font(.system(size: 10))
+                .font(.text(10))
                 .foregroundStyle(Color.brandPrimary)
         }
         .padding(6)
-        .background(.white, in: .rect(cornerRadius: 8))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .background(.white, in: .rect(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.ink, lineWidth: 2) }
     }
 }
 

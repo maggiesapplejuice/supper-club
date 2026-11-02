@@ -8,17 +8,24 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                if let systemImage {
-                    Image(systemName: systemImage)
+            HStack {
+                Sparkle().fill(.white).frame(width: 16, height: 16)
+                Spacer()
+                HStack(spacing: 8) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                    }
+                    Text(title)
                 }
-                Text(title)
+                .font(.display(14))
+                .tracking(0.6)
+                Spacer()
+                Sparkle().fill(.white).frame(width: 16, height: 16)
             }
-            .font(.system(size: 14, weight: .semibold))
-            .tracking(0.6)
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .background(Color.brandPrimary.opacity(isEnabled ? 1 : 0.5), in: .rect(cornerRadius: 10))
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .background(Color.ink.opacity(isEnabled ? 1 : 0.3), in: .capsule)
         }
         .disabled(!isEnabled)
     }
@@ -31,31 +38,23 @@ struct SecondaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.brandPrimary)
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10).stroke(Color.brandPrimary)
-                }
+                .font(.display(14))
+                .foregroundStyle(Color.ink)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
         }
     }
 }
 
 struct BrandHeader: View {
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "fork.knife")
-                .font(.system(size: 20))
-                .foregroundStyle(Color.brandPrimary)
-                .frame(width: 56, height: 56)
-                .background(Color.gray1, in: .circle)
-                .overlay { Circle().stroke(Color.gray2) }
-            Text("SUPPER CLUB")
-                .font(.system(size: 18, weight: .semibold))
-                .tracking(3)
-                .foregroundStyle(Color.brandText)
-            Text("Join the global recipe exchange")
-                .font(.system(size: 12))
+        VStack(spacing: 6) {
+            ChefCharacter(size: 150)
+            Text("Supper Club")
+                .font(.display(30))
+                .foregroundStyle(Color.ink)
+            Text("join the global recipe exchange")
+                .font(.text(13))
                 .foregroundStyle(Color.gray4)
         }
         .frame(maxWidth: .infinity)
@@ -74,8 +73,8 @@ struct LabeledField<Accessory: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.brandText)
+                    .font(.display(13))
+                    .foregroundStyle(Color.ink)
                 Spacer()
                 accessory()
             }
@@ -89,11 +88,11 @@ struct LabeledField<Accessory: View>: View {
             }
             .textInputAutocapitalization(label == "Full Name" ? .words : .never)
             .autocorrectionDisabled()
-            .font(.system(size: 14))
-            .padding(.horizontal, 14)
-            .frame(height: 46)
-            .background(Color.gray1, in: .rect(cornerRadius: 10))
-            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.gray2) }
+            .font(.text(14))
+            .padding(.horizontal, 20)
+            .frame(height: 50)
+            .background(Color.white, in: .capsule)
+            .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
         }
     }
 }
@@ -112,6 +111,22 @@ extension LabeledField where Accessory == EmptyView {
     }
 }
 
+struct InkProgressBar: View {
+    let value: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            Capsule()
+                .fill(Color.ink)
+                .frame(width: proxy.size.width * min(1, max(0, value)))
+        }
+        .frame(height: 12)
+        .background(Color.white, in: .capsule)
+        .clipShape(.capsule)
+        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+    }
+}
+
 struct StepHeader: View {
     let step: Int
     let total: Int
@@ -120,18 +135,18 @@ struct StepHeader: View {
     var body: some View {
         HStack(spacing: 14) {
             Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.brandText)
-                    .frame(width: 36, height: 36)
-                    .overlay { Circle().stroke(Color.gray2) }
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.ink)
+                    .frame(width: 44, height: 44)
+                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.ink, lineWidth: 2) }
             }
             .accessibilityLabel("Back")
-            ProgressView(value: Double(step), total: Double(total))
-                .tint(.brandPrimary)
+            InkProgressBar(value: Double(step) / Double(total))
+                .accessibilityLabel("Step \(step) of \(total)")
             Text("\(step)/\(total)")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.gray4)
+                .font(.text(13))
+                .foregroundStyle(Color.ink)
         }
     }
 }
@@ -143,10 +158,10 @@ struct StepTitle: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(Color.brandText)
+                .font(.display(25))
+                .foregroundStyle(Color.ink)
             Text(subtitle)
-                .font(.system(size: 14))
+                .font(.text(14))
                 .foregroundStyle(Color.gray4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -164,30 +179,32 @@ struct OptionRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                Text(emoji)
-                    .font(.system(size: 20))
-                    .frame(width: 40, height: 40)
-                    .background(isSelected ? Color.brandSecondary : Color.gray1, in: .rect(cornerRadius: 8))
+                InkGlyphView(emoji: emoji, size: 42)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.brandText)
+                        .font(.display(15))
+                        .foregroundStyle(Color.ink)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 13))
+                            .font(.text(13))
                             .foregroundStyle(Color.gray4)
                     }
                 }
                 Spacer()
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? Color.brandPrimary : Color.gray3)
+                ZStack {
+                    Circle().stroke(Color.ink, lineWidth: 2)
+                    if isSelected {
+                        Circle().fill(Color.ink)
+                        Sparkle().fill(.white).frame(width: 13, height: 13)
+                    }
+                }
+                .frame(width: 24, height: 24)
             }
             .padding(12)
-            .background(.white, in: .rect(cornerRadius: 12))
+            .background(isSelected ? Color.gray1 : .white, in: .rect(cornerRadius: 20))
             .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.brandPrimary : Color.gray2, lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? Color.ink : Color.gray2, lineWidth: isSelected ? 2.5 : 2)
             }
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])

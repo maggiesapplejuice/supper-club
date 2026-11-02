@@ -2,6 +2,7 @@ import CoreMotion
 import SwiftUI
 
 /// The printed card. `tilt` runs from -1 to 1 on each axis and drives the holographic foil.
+/// Rarity reads through line weight and sparkles: Epic inverts to black, Legendary is the only card in color.
 struct RecipeCardView: View {
     let recipe: Recipe
     let width: CGFloat
@@ -12,11 +13,12 @@ struct RecipeCardView: View {
     private var unit: CGFloat { width / 300 }
     private var tier: RarityTier { recipe.tier }
     private var isHolo: Bool { tier.isHolographic }
+    private var isDark: Bool { tier >= .epic }
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 20 * unit)
-                .fill(isHolo ? Color(hex: 0x15131F) : .white)
+            RoundedRectangle(cornerRadius: 24 * unit)
+                .fill(isHolo ? Color(hex: 0x15131F) : (isDark ? Color.ink : .white))
             if isHolo {
                 // Sits under the content so the sparkle never covers the dish or the text.
                 HolographicFoil(tilt: tilt, time: time, unit: unit)
@@ -26,25 +28,25 @@ struct RecipeCardView: View {
                 header
                 art
                 Text(recipe.name)
-                    .font(.system(size: 22 * unit, weight: .bold))
-                    .foregroundStyle(isHolo ? .white : Color.brandText)
+                    .font(.display(22 * unit))
+                    .foregroundStyle(isDark ? .white : Color.ink)
                     .lineLimit(2, reservesSpace: true)
                     .minimumScaleFactor(0.8)
                 HStack {
-                    Text(recipe.skill.rawValue)
+                    Text(recipe.skill.rawValue.lowercased())
                     Spacer()
                     Text(minutesText)
                 }
-                .font(.system(size: 13 * unit, weight: .medium))
-                .foregroundStyle(isHolo ? .white.opacity(0.75) : Color.gray4)
+                .font(.text(13 * unit))
+                .foregroundStyle(isDark ? .white.opacity(0.8) : Color.gray4)
             }
             .padding(16 * unit)
         }
         .frame(width: width, height: height)
-        .clipShape(.rect(cornerRadius: 20 * unit))
+        .clipShape(.rect(cornerRadius: 24 * unit))
         .overlay {
-            RoundedRectangle(cornerRadius: 20 * unit)
-                .strokeBorder(borderStyle, lineWidth: (isHolo ? 5 : 4) * unit)
+            RoundedRectangle(cornerRadius: 24 * unit)
+                .strokeBorder(borderStyle, lineWidth: borderWidth * unit)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(recipe.name), \(tier.name) \(recipe.cuisine) recipe card")
@@ -52,42 +54,57 @@ struct RecipeCardView: View {
 
     private var header: some View {
         HStack {
-            Text(recipe.cuisine.uppercased())
-                .font(.system(size: 12 * unit, weight: .semibold))
-                .tracking(1)
-                .foregroundStyle(isHolo ? .white.opacity(0.8) : Color.gray4)
+            Text(recipe.cuisine.lowercased())
+                .font(.text(13 * unit))
+                .foregroundStyle(isDark ? .white.opacity(0.85) : Color.gray4)
             Spacer()
-            HStack(spacing: 1 * unit) {
+            HStack(spacing: 2 * unit) {
                 ForEach(0..<tier.stars, id: \.self) { _ in
-                    Image(systemName: "star.fill")
+                    Sparkle().frame(width: 14 * unit, height: 14 * unit)
                 }
             }
-            .font(.system(size: 11 * unit))
-            .foregroundStyle(tier.color)
+            .foregroundStyle(isDark ? .white : Color.ink)
         }
     }
 
     private var art: some View {
-        Text(recipe.emoji)
-            .font(.system(size: 104 * unit))
+        InkGlyphView(emoji: recipe.emoji, size: 140 * unit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                isHolo ? Color.white.opacity(0.08) : Color.brandSecondary,
-                in: .rect(cornerRadius: 12 * unit)
-            )
+            .background {
+                ZStack {
+                    isDark ? Color.white : Color.gray1
+                    if isHolo {
+                        HolographicFoil.rainbow(tilt: tilt).opacity(0.5)
+                    }
+                }
+            }
+            .clipShape(.rect(cornerRadius: 16 * unit))
     }
 
     private var minutesText: String {
         recipe.minutes < 120 ? "\(recipe.minutes) min" : "\(recipe.minutes / 60) hr"
     }
 
+    private var borderWidth: CGFloat {
+        switch tier {
+        case .common: 2
+        case .uncommon: 3
+        case .rare: 5
+        case .epic, .legendary: 6
+        }
+    }
+
     private var borderStyle: AnyShapeStyle {
-        guard isHolo else { return AnyShapeStyle(tier.color) }
-        return AnyShapeStyle(AngularGradient(
-            colors: [Color(hex: 0xF7E08A), Color(hex: 0xB8860B), .white, Color(hex: 0xD4A72C), Color(hex: 0xF7E08A)],
-            center: .center,
-            angle: .degrees(tilt.x * 90)
-        ))
+        switch tier {
+        case .common: AnyShapeStyle(Color.gray3)
+        case .uncommon, .rare, .epic: AnyShapeStyle(Color.ink)
+        case .legendary:
+            AnyShapeStyle(AngularGradient(
+                colors: HolographicFoil.spectrum,
+                center: .center,
+                angle: .degrees(tilt.x * 90)
+            ))
+        }
     }
 }
 
@@ -97,18 +114,22 @@ struct HolographicFoil: View {
     let time: Double
     let unit: CGFloat
 
-    private static let spectrum: [Color] = [
+    static let spectrum: [Color] = [
         Color(hex: 0xFF4D6D), Color(hex: 0xFFB347), Color(hex: 0xFFF275), Color(hex: 0x5CFFB1),
         Color(hex: 0x4DD8FF), Color(hex: 0x8C7BFF), Color(hex: 0xFF6FD8), Color(hex: 0xFF4D6D),
     ]
 
+    static func rainbow(tilt: CGPoint) -> LinearGradient {
+        LinearGradient(
+            colors: spectrum + spectrum,
+            startPoint: UnitPoint(x: -0.8 + tilt.x * 0.7, y: -0.8 + tilt.y * 0.7),
+            endPoint: UnitPoint(x: 1.8 + tilt.x * 0.7, y: 1.8 + tilt.y * 0.7)
+        )
+    }
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: Self.spectrum + Self.spectrum,
-                startPoint: UnitPoint(x: -0.8 + tilt.x * 0.7, y: -0.8 + tilt.y * 0.7),
-                endPoint: UnitPoint(x: 1.8 + tilt.x * 0.7, y: 1.8 + tilt.y * 0.7)
-            )
+            Self.rainbow(tilt: tilt)
             .blendMode(.plusLighter)
             .opacity(0.32)
 
@@ -158,22 +179,29 @@ struct CardBackView: View {
     let width: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 20 * width / 300)
-            .fill(LinearGradient(colors: [.brandPrimary, Color(hex: 0x6E1F1F)], startPoint: .top, endPoint: .bottom))
+        let unit = width / 300
+        RoundedRectangle(cornerRadius: 24 * unit)
+            .fill(Color.ink)
             .overlay {
-                VStack(spacing: 10 * width / 300) {
-                    Image(systemName: "fork.knife")
-                        .font(.system(size: 54 * width / 300))
-                    Text("SUPPER CLUB")
-                        .font(.system(size: 16 * width / 300, weight: .semibold))
-                        .tracking(3 * width / 300)
+                VStack(spacing: 14 * unit) {
+                    ChefCharacter(size: 130 * unit, showsSparkles: false)
+                        .padding(20 * unit)
+                        .background(.white, in: .circle)
+                    Text("Supper Club")
+                        .font(.display(24 * unit))
+                        .foregroundStyle(.white)
                 }
-                .foregroundStyle(Color.brandSecondary)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 20 * width / 300)
-                    .strokeBorder(Color.brandSecondary.opacity(0.6), lineWidth: 4 * width / 300)
-                    .padding(8 * width / 300)
+                RoundedRectangle(cornerRadius: 16 * unit)
+                    .strokeBorder(.white, lineWidth: 2.5 * unit)
+                    .padding(10 * unit)
+            }
+            .overlay(alignment: .topLeading) {
+                Sparkle().fill(.white).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Sparkle().fill(.white).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
             }
             .frame(width: width, height: width * 1.4)
             .accessibilityLabel("Face-down card")

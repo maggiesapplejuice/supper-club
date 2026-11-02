@@ -16,13 +16,15 @@ struct RarityDetailView: View {
             }
             .padding(20)
         }
+        .background(Color.paper)
         .overlay(alignment: .topTrailing) {
             Button("Close", systemImage: "xmark") { dismiss() }
                 .labelStyle(.iconOnly)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.display(14))
                 .foregroundStyle(Color.brandText)
-                .frame(width: 36, height: 36)
-                .background(Color.gray1, in: .circle)
+                .frame(width: 44, height: 44)
+                .background(.white, in: .circle)
+                .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
                 .padding(16)
         }
     }
@@ -30,14 +32,14 @@ struct RarityDetailView: View {
     private var summary: some View {
         VStack(spacing: 6) {
             Text(recipe.tier.name.uppercased())
-                .font(.system(size: 13, weight: .bold))
+                .font(.display(13))
                 .tracking(2)
                 .foregroundStyle(recipe.tier.color)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(recipe.score)")
-                    .font(.system(size: 44, weight: .bold))
+                    .font(.display(44))
                 Text("/ 100 rarity points")
-                    .font(.system(size: 14))
+                    .font(.text(14))
                     .foregroundStyle(Color.gray4)
             }
             .foregroundStyle(Color.brandText)
@@ -48,23 +50,22 @@ struct RarityDetailView: View {
     private var factors: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("What makes up this rarity")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.display(17))
                 .foregroundStyle(Color.brandText)
             ForEach(recipe.factors) { factor in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text(factor.name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.display(15))
                         Spacer()
                         Text("\(factor.points)/\(RarityFactor.maxPoints)")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.text(14))
                             .monospacedDigit()
                     }
                     .foregroundStyle(Color.brandText)
-                    ProgressView(value: Double(factor.points), total: Double(RarityFactor.maxPoints))
-                        .tint(recipe.tier.color)
+                    InkProgressBar(value: Double(factor.points) / Double(RarityFactor.maxPoints))
                     Text(factor.detail)
-                        .font(.system(size: 13))
+                        .font(.text(13))
                         .foregroundStyle(Color.gray4)
                 }
                 .accessibilityElement(children: .combine)
@@ -76,29 +77,32 @@ struct RarityDetailView: View {
     private var scale: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Rarity scale")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.display(17))
                 .foregroundStyle(Color.brandText)
             ForEach(RarityTier.allCases.reversed()) { tier in
                 HStack(spacing: 10) {
-                    Circle()
-                        .fill(tier.color)
-                        .frame(width: 10, height: 10)
+                    HStack(spacing: 1) {
+                        ForEach(0..<tier.stars, id: \.self) { _ in
+                            Sparkle().fill(Color.ink).frame(width: 11, height: 11)
+                        }
+                    }
+                    .frame(width: 62, alignment: .leading)
                     Text(tier.name)
-                        .font(.system(size: 14, weight: tier == recipe.tier ? .bold : .regular))
+                        .font(tier == recipe.tier ? .display(14) : .text(14))
                     if tier.isHolographic {
                         Text("Holographic")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.display(11))
                             .foregroundStyle(tier.color)
                     }
                     Spacer()
                     Text(tier.scoreRange)
-                        .font(.system(size: 13))
+                        .font(.text(13))
                         .foregroundStyle(Color.gray4)
                 }
                 .foregroundStyle(Color.brandText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(tier == recipe.tier ? tier.color.opacity(0.12) : .clear, in: .rect(cornerRadius: 8))
+                .background(Color.gray1.opacity(tier == recipe.tier ? 1 : 0), in: .rect(cornerRadius: 14))
                 .accessibilityElement(children: .combine)
             }
         }

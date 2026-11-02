@@ -14,43 +14,42 @@ struct LoginView: View {
                     .padding(.bottom, 10)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Welcome back")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.display(22))
                         .foregroundStyle(Color.brandText)
                     Text("Please enter your details to sign in")
-                        .font(.system(size: 13))
+                        .font(.text(13))
                         .foregroundStyle(Color.gray4)
                 }
                 LabeledField(label: "Email Address", placeholder: "chef@supperclub.com", text: $email, keyboard: .emailAddress)
                 LabeledField(label: "Password", placeholder: "Password", text: $password, isSecure: true) {
                     // Password reset needs a backend.
                     Button("Forgot password?") {}
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.text(12))
                         .foregroundStyle(Color.brandPrimary)
                 }
                 PrimaryButton(title: "LOG IN", isEnabled: canSubmit) {
                     model.logIn()
                 }
                 HStack(spacing: 12) {
-                    Rectangle().fill(Color.gray2).frame(height: 1)
+                    Rectangle().fill(Color.ink).frame(height: 2)
                     Text("Or continue with")
-                        .font(.system(size: 12))
+                        .font(.text(12))
                         .foregroundStyle(Color.gray4)
                         .fixedSize()
-                    Rectangle().fill(Color.gray2).frame(height: 1)
+                    Rectangle().fill(Color.ink).frame(height: 2)
                 }
                 HStack(spacing: 12) {
-                    SocialButton(title: "Google", systemImage: "g.circle.fill") { model.signUp() }
+                    SocialButton(title: "Google", systemImage: "globe") { model.signUp() }
                     SocialButton(title: "Apple", systemImage: "apple.logo") { model.signUp() }
                 }
                 HStack(spacing: 4) {
                     Text("Don't have an account?")
                         .foregroundStyle(Color.gray4)
                     Button("Sign Up") { model.path.append(.signUp) }
-                        .fontWeight(.semibold)
                         .underline()
                         .foregroundStyle(Color.brandPrimary)
                 }
-                .font(.system(size: 13))
+                .font(.text(13))
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)
             }
@@ -78,10 +77,10 @@ struct SignUpView: View {
                     .padding(.bottom, 10)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Create your account")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.display(22))
                         .foregroundStyle(Color.brandText)
                     Text("Please enter your details to get started")
-                        .font(.system(size: 13))
+                        .font(.text(13))
                         .foregroundStyle(Color.gray4)
                 }
                 LabeledField(label: "Full Name", placeholder: "Gordon Ramsay", text: $fullName)
@@ -95,11 +94,10 @@ struct SignUpView: View {
                     Text("Already have an account?")
                         .foregroundStyle(Color.gray4)
                     Button("Log In") { model.path.removeAll() }
-                        .fontWeight(.semibold)
                         .underline()
                         .foregroundStyle(Color.brandPrimary)
                 }
-                .font(.system(size: 13))
+                .font(.text(13))
                 .frame(maxWidth: .infinity)
                 .padding(.top, 6)
             }
@@ -117,10 +115,10 @@ private struct SocialButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 13, weight: .medium))
+                .font(.text(13))
                 .foregroundStyle(Color.brandText)
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.gray2) }
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
         }
     }
 }
