@@ -81,8 +81,15 @@ let restrictionGroups = [
     ]),
     RestrictionGroup(title: "Sourcing & sensitivities", emoji: "🌱", options: [
         "Non-GMO", "Organic", "Locally sourced", "No seed oils", "No artificial dyes",
-        "No added sugar", "Alcohol-free", "Caffeine-free", "Low-histamine",
-        "AIP (autoimmune protocol)", "Low-oxalate",
+        "No added sugar", "Alcohol-free", "Caffeine-free",
+    ]),
+    RestrictionGroup(title: "Health conditions", emoji: "🍲", options: [
+        "IBS", "Crohn's or colitis", "GERD / acid reflux", "Gastroparesis", "Diverticulitis",
+        "SIBO", "Fructose malabsorption", "Eosinophilic esophagitis (EoE)", "Gallbladder disease",
+        "Pancreatitis", "Gout", "Kidney disease", "Kidney stones", "Heart disease",
+        "High blood pressure", "PKU", "G6PD deficiency", "Histamine intolerance / MCAS",
+        "Hashimoto's", "Interstitial cystitis", "Migraine triggers", "Low-histamine",
+        "AIP (autoimmune protocol)", "Low-oxalate", "Pregnancy-safe",
     ]),
 ]
 

@@ -6,6 +6,7 @@ enum Ingredient: String, CaseIterable {
     case gluten, peanut, treeNut, soy, sesame, mustard, celery, sulfites, corn
     case nightshade, alliums, mushroom, legumes, rootVeg
     case starch, sugar, alcohol, caffeine, fermented, salty, seedOil
+    case spicy, highFat, acidic, rawProtein
     case cooked
 
     var label: String {
@@ -22,6 +23,10 @@ enum Ingredient: String, CaseIterable {
         case .mushroom: "mushrooms"
         case .legumes: "legumes"
         case .sulfites: "sulfites"
+        case .spicy: "chili heat"
+        case .highFat: "rich or fried"
+        case .acidic: "tomato, citrus or vinegar"
+        case .rawProtein: "raw fish or egg"
         case .cooked: "cooked food"
         default: rawValue
         }
@@ -30,6 +35,8 @@ enum Ingredient: String, CaseIterable {
 
 private let meat: Set<Ingredient> = [.beef, .pork, .lamb, .poultry]
 private let paleo: Set<Ingredient> = [.starch, .legumes, .peanut, .soy, .dairy, .sugar, .corn, .seedOil]
+private let lowFODMAP: Set<Ingredient> = [.alliums, .gluten, .legumes, .dairy, .mushroom]
+private let fibrous: Set<Ingredient> = [.legumes, .treeNut, .peanut, .sesame, .corn, .mushroom]
 
 /// What each listed restriction rules out. Restrictions missing here, like Organic or anything typed in,
 /// are about sourcing or too specific to check, so they don't hide recipes.
@@ -41,7 +48,7 @@ private let excludedIngredients: [String: Set<Ingredient>] = [
     "Paleo": paleo,
     "Whole30": paleo.union([.alcohol]),
     "Low-carb": [.starch, .sugar],
-    "Low-FODMAP": [.alliums, .gluten, .legumes, .dairy, .mushroom],
+    "Low-FODMAP": lowFODMAP,
     "Low-sodium": [.salty],
     "Diabetic-friendly": [.sugar],
     "Raw food": [.cooked],
@@ -82,7 +89,39 @@ private let excludedIngredients: [String: Set<Ingredient>] = [
     "Low-histamine": [.fermented, .fish, .shellfish, .alcohol],
     "AIP (autoimmune protocol)": paleo.union([.nightshade, .egg, .treeNut, .sesame, .caffeine, .alcohol]),
     "Low-oxalate": [.legumes, .soy, .treeNut, .peanut, .caffeine, .rootVeg],
+
+    // Common trigger foods for each condition. Everyone's triggers differ, so this is a starting filter,
+    // not medical advice.
+    "IBS": lowFODMAP.union([.spicy]),
+    "Crohn's or colitis": fibrous.union([.spicy, .highFat, .alcohol, .caffeine]),
+    "GERD / acid reflux": [.spicy, .acidic, .highFat, .alliums, .caffeine, .alcohol],
+    "Gastroparesis": fibrous.union([.highFat]),
+    "Diverticulitis": fibrous,
+    "SIBO": lowFODMAP.union([.sugar]),
+    "Fructose malabsorption": [.sugar, .alliums, .gluten],
+    "Eosinophilic esophagitis (EoE)": [.dairy, .gluten, .egg, .soy, .peanut, .treeNut, .fish, .shellfish],
+    "Gallbladder disease": [.highFat],
+    "Pancreatitis": [.highFat, .alcohol],
+    "Gout": [.beef, .lamb, .pork, .fish, .shellfish, .alcohol, .sugar],
+    "Kidney disease": [.salty, .fermented, .rootVeg, .nightshade, .dairy, .legumes, .treeNut, .peanut],
+    "Kidney stones": [.legumes, .soy, .treeNut, .peanut, .caffeine, .rootVeg, .salty],
+    "Heart disease": [.salty, .highFat],
+    "High blood pressure": [.salty, .alcohol],
+    "PKU": meat.union([.fish, .shellfish, .egg, .dairy, .legumes, .soy, .treeNut, .peanut]),
+    "G6PD deficiency": [.legumes],
+    "Histamine intolerance / MCAS": [.fermented, .fish, .shellfish, .alcohol, .acidic],
+    "Hashimoto's": [.gluten],
+    "Interstitial cystitis": [.acidic, .spicy, .caffeine, .alcohol],
+    "Migraine triggers": [.fermented, .alcohol, .caffeine],
+    "Pregnancy-safe": [.rawProtein, .alcohol],
 ]
+
+/// Restrictions that actually hide recipes, in the order the picker lists them.
+func recipeFilters(in restrictions: Set<String>) -> [String] {
+    restrictionGroups.flatMap(\.options).filter {
+        restrictions.contains($0) && (excludedIngredients[$0] != nil || $0 == "Meatless Fridays")
+    }
+}
 
 struct DietConflict: Hashable {
     let restriction: String
@@ -125,92 +164,92 @@ private let recipeContents: [String: Set<Ingredient>] = Dictionary(uniqueKeysWit
 private let taggedDishes: [String: Set<Ingredient>] = [
     // Chinese
     "Egg Fried Rice": [.egg, .starch, .soy, .gluten, .alliums, .seedOil, .salty],
-    "Scallion Pancakes": [.gluten, .starch, .alliums, .seedOil],
-    "Mapo Tofu": [.soy, .beef, .nightshade, .fermented, .gluten, .alliums, .salty, .seedOil],
+    "Scallion Pancakes": [.gluten, .starch, .alliums, .seedOil, .highFat],
+    "Mapo Tofu": [.soy, .beef, .nightshade, .fermented, .gluten, .alliums, .salty, .seedOil, .spicy],
     "Yunnan Wild Mushroom Hot Pot": [.mushroom, .poultry, .alliums, .salty],
-    "Xiao Long Bao": [.pork, .gluten, .starch, .soy, .alliums, .alcohol, .fermented, .salty],
+    "Xiao Long Bao": [.pork, .gluten, .starch, .soy, .alliums, .alcohol, .fermented, .salty, .highFat],
     "Buddha Jumps Over the Wall": [.shellfish, .fish, .poultry, .pork, .mushroom, .alcohol, .soy, .gluten, .salty, .fermented, .sulfites],
-    "Peking Duck": [.poultry, .gluten, .starch, .sugar, .soy, .sesame, .fermented, .alliums, .salty],
-    "Hand-Pulled Lanzhou Noodles": [.gluten, .starch, .beef, .alliums, .nightshade, .seedOil, .salty],
+    "Peking Duck": [.poultry, .gluten, .starch, .sugar, .soy, .sesame, .fermented, .alliums, .salty, .highFat],
+    "Hand-Pulled Lanzhou Noodles": [.gluten, .starch, .beef, .alliums, .nightshade, .seedOil, .salty, .spicy],
     // French
-    "Croque Monsieur": [.pork, .dairy, .gluten, .starch, .mustard, .fermented, .salty],
-    "Ratatouille": [.nightshade, .alliums],
-    "Coq au Vin": [.poultry, .pork, .alcohol, .sulfites, .mushroom, .alliums, .dairy, .gluten, .fermented],
-    "Black Truffle Scrambled Eggs": [.egg, .dairy, .mushroom],
-    "Butter Croissants": [.gluten, .dairy, .egg, .starch, .sugar],
-    "Bouillabaisse de Marseille": [.fish, .shellfish, .nightshade, .alliums, .gluten, .egg, .rootVeg, .starch],
-    "Grand Marnier Soufflé": [.egg, .dairy, .sugar, .alcohol, .gluten],
-    "Canard à la Presse": [.poultry, .alcohol, .sulfites, .dairy, .fermented],
+    "Croque Monsieur": [.pork, .dairy, .gluten, .starch, .mustard, .fermented, .salty, .highFat],
+    "Ratatouille": [.nightshade, .alliums, .acidic],
+    "Coq au Vin": [.poultry, .pork, .alcohol, .sulfites, .mushroom, .alliums, .dairy, .gluten, .fermented, .highFat],
+    "Black Truffle Scrambled Eggs": [.egg, .dairy, .mushroom, .highFat],
+    "Butter Croissants": [.gluten, .dairy, .egg, .starch, .sugar, .highFat],
+    "Bouillabaisse de Marseille": [.fish, .shellfish, .nightshade, .alliums, .gluten, .egg, .rootVeg, .starch, .acidic],
+    "Grand Marnier Soufflé": [.egg, .dairy, .sugar, .alcohol, .gluten, .highFat, .acidic],
+    "Canard à la Presse": [.poultry, .alcohol, .sulfites, .dairy, .fermented, .highFat],
     // Greek
-    "Horiatiki Salad": [.dairy, .nightshade, .alliums, .fermented, .salty],
+    "Horiatiki Salad": [.dairy, .nightshade, .alliums, .fermented, .salty, .acidic],
     "Tzatziki with Pita": [.dairy, .gluten, .starch, .alliums],
-    "Spanakopita": [.gluten, .dairy, .egg, .alliums, .starch],
+    "Spanakopita": [.gluten, .dairy, .egg, .alliums, .starch, .highFat],
     "Chios Mastic Rice Pudding": [.dairy, .starch, .sugar],
-    "Moussaka": [.lamb, .nightshade, .dairy, .egg, .gluten, .alliums, .rootVeg],
-    "Lamb Kleftiko": [.lamb, .rootVeg, .starch, .alliums, .dairy, .nightshade],
-    "Galaktoboureko": [.gluten, .dairy, .egg, .sugar, .starch],
-    "Kokoretsi": [.lamb],
+    "Moussaka": [.lamb, .nightshade, .dairy, .egg, .gluten, .alliums, .rootVeg, .highFat, .acidic],
+    "Lamb Kleftiko": [.lamb, .rootVeg, .starch, .alliums, .dairy, .nightshade, .highFat, .acidic],
+    "Galaktoboureko": [.gluten, .dairy, .egg, .sugar, .starch, .highFat],
+    "Kokoretsi": [.lamb, .highFat],
     // Indian
-    "Dal Tadka": [.legumes, .alliums, .nightshade, .dairy],
-    "Jeera Aloo": [.rootVeg, .starch, .nightshade, .seedOil],
-    "Chana Masala": [.legumes, .alliums, .nightshade, .seedOil],
+    "Dal Tadka": [.legumes, .alliums, .nightshade, .dairy, .spicy, .acidic],
+    "Jeera Aloo": [.rootVeg, .starch, .nightshade, .seedOil, .spicy],
+    "Chana Masala": [.legumes, .alliums, .nightshade, .seedOil, .spicy, .acidic],
     "Kashmiri Morel Pulao": [.mushroom, .starch, .dairy, .treeNut, .alliums],
-    "Butter Chicken": [.poultry, .dairy, .nightshade, .treeNut, .alliums, .sugar],
-    "Hyderabadi Dum Biryani": [.lamb, .starch, .dairy, .alliums, .nightshade, .seedOil],
-    "Malai Kofta": [.dairy, .treeNut, .rootVeg, .nightshade, .alliums, .seedOil, .starch, .sugar],
-    "Galouti Kebab": [.lamb, .alliums, .dairy],
+    "Butter Chicken": [.poultry, .dairy, .nightshade, .treeNut, .alliums, .sugar, .highFat, .acidic],
+    "Hyderabadi Dum Biryani": [.lamb, .starch, .dairy, .alliums, .nightshade, .seedOil, .spicy, .highFat],
+    "Malai Kofta": [.dairy, .treeNut, .rootVeg, .nightshade, .alliums, .seedOil, .starch, .sugar, .highFat],
+    "Galouti Kebab": [.lamb, .alliums, .dairy, .highFat],
     // Italian
-    "Spaghetti Aglio e Olio": [.gluten, .starch, .alliums, .nightshade],
-    "Tomato Bruschetta": [.gluten, .starch, .nightshade, .alliums],
+    "Spaghetti Aglio e Olio": [.gluten, .starch, .alliums, .nightshade, .spicy],
+    "Tomato Bruschetta": [.gluten, .starch, .nightshade, .alliums, .acidic],
     "Risotto alla Milanese": [.starch, .dairy, .alcohol, .sulfites, .alliums, .beef],
     "Wild Mushroom & Truffle Risotto": [.starch, .dairy, .mushroom, .alcohol, .sulfites, .alliums],
-    "Hand-Rolled Orecchiette": [.gluten, .starch, .alliums, .fish, .nightshade],
-    "Culatello Tortellini in Brodo": [.gluten, .egg, .pork, .beef, .dairy, .starch, .fermented, .salty],
-    "Osso Buco": [.beef, .alcohol, .sulfites, .gluten, .celery, .alliums, .nightshade, .dairy],
-    "Sfogliatella": [.gluten, .dairy, .egg, .sugar, .starch],
+    "Hand-Rolled Orecchiette": [.gluten, .starch, .alliums, .fish, .nightshade, .spicy],
+    "Culatello Tortellini in Brodo": [.gluten, .egg, .pork, .beef, .dairy, .starch, .fermented, .salty, .highFat],
+    "Osso Buco": [.beef, .alcohol, .sulfites, .gluten, .celery, .alliums, .nightshade, .dairy, .highFat, .acidic],
+    "Sfogliatella": [.gluten, .dairy, .egg, .sugar, .starch, .highFat],
     // Japanese
-    "Tamago Kake Gohan": [.egg, .starch, .soy, .gluten, .salty],
+    "Tamago Kake Gohan": [.egg, .starch, .soy, .gluten, .salty, .rawProtein],
     "Miso Soup": [.soy, .fermented, .fish, .salty, .alliums],
-    "Chicken Katsu Curry": [.poultry, .gluten, .egg, .starch, .seedOil, .alliums, .rootVeg, .sugar],
+    "Chicken Katsu Curry": [.poultry, .gluten, .egg, .starch, .seedOil, .alliums, .rootVeg, .sugar, .highFat],
     "Matsutake Gohan": [.mushroom, .starch, .soy, .gluten, .fish, .alcohol, .salty],
-    "Tonkotsu Ramen": [.pork, .gluten, .starch, .egg, .soy, .alliums, .sesame, .salty, .fermented],
-    "Wagyu Sukiyaki": [.beef, .soy, .gluten, .sugar, .alcohol, .egg, .mushroom, .alliums, .salty],
-    "Edomae Nigiri": [.fish, .shellfish, .starch, .sugar, .soy, .gluten, .fermented],
+    "Tonkotsu Ramen": [.pork, .gluten, .starch, .egg, .soy, .alliums, .sesame, .salty, .fermented, .highFat],
+    "Wagyu Sukiyaki": [.beef, .soy, .gluten, .sugar, .alcohol, .egg, .mushroom, .alliums, .salty, .highFat, .rawProtein],
+    "Edomae Nigiri": [.fish, .shellfish, .starch, .sugar, .soy, .gluten, .fermented, .acidic, .rawProtein],
     "Hand-Cut Juwari Soba": [.starch, .soy, .gluten, .fish, .alcohol, .salty],
     // Korean
-    "Kimchi Fried Rice": [.starch, .fermented, .nightshade, .fish, .shellfish, .egg, .pork, .alliums, .sesame, .seedOil, .salty, .soy, .gluten],
+    "Kimchi Fried Rice": [.starch, .fermented, .nightshade, .fish, .shellfish, .egg, .pork, .alliums, .sesame, .seedOil, .salty, .soy, .gluten, .spicy, .acidic],
     "Gyeran-jjim": [.egg, .alliums, .salty, .shellfish, .sesame],
-    "Bibimbap": [.starch, .egg, .beef, .sesame, .soy, .gluten, .nightshade, .fermented, .sugar, .alliums],
+    "Bibimbap": [.starch, .egg, .beef, .sesame, .soy, .gluten, .nightshade, .fermented, .sugar, .alliums, .spicy],
     "Temple Doenjang Jjigae": [.soy, .fermented, .nightshade, .mushroom, .salty, .rootVeg],
-    "Yangnyeom Fried Chicken": [.poultry, .gluten, .starch, .seedOil, .nightshade, .sugar, .soy, .alliums, .peanut, .sesame],
+    "Yangnyeom Fried Chicken": [.poultry, .gluten, .starch, .seedOil, .nightshade, .sugar, .soy, .alliums, .peanut, .sesame, .spicy, .highFat],
     "Royal Court Sinseollo": [.beef, .fish, .shellfish, .egg, .mushroom, .treeNut, .soy, .gluten, .sesame],
-    "Homemade Baechu Kimchi": [.fermented, .fish, .shellfish, .nightshade, .alliums, .sugar, .salty],
+    "Homemade Baechu Kimchi": [.fermented, .fish, .shellfish, .nightshade, .alliums, .sugar, .salty, .spicy, .acidic],
     "Gujeolpan": [.gluten, .beef, .shellfish, .egg, .mushroom, .sesame, .soy],
     // Mexican
-    "Guacamole": [.alliums, .nightshade],
-    "Cheese Quesadillas": [.dairy, .corn, .starch],
-    "Chicken Fajitas": [.poultry, .nightshade, .alliums, .gluten, .starch, .seedOil],
-    "Huitlacoche Quesadillas": [.corn, .mushroom, .dairy, .alliums, .nightshade, .starch],
-    "Pork Tamales": [.pork, .corn, .starch, .nightshade, .alliums],
-    "Mole Negro Oaxaqueño": [.poultry, .nightshade, .caffeine, .sugar, .treeNut, .sesame, .gluten, .alliums, .seedOil, .sulfites],
-    "Cochinita Pibil": [.pork, .alliums, .nightshade, .corn, .starch],
-    "Chiles en Nogada": [.pork, .beef, .nightshade, .treeNut, .dairy, .sugar, .egg, .sulfites, .alliums],
+    "Guacamole": [.alliums, .nightshade, .spicy, .acidic],
+    "Cheese Quesadillas": [.dairy, .corn, .starch, .highFat],
+    "Chicken Fajitas": [.poultry, .nightshade, .alliums, .gluten, .starch, .seedOil, .acidic],
+    "Huitlacoche Quesadillas": [.corn, .mushroom, .dairy, .alliums, .nightshade, .starch, .highFat],
+    "Pork Tamales": [.pork, .corn, .starch, .nightshade, .alliums, .spicy, .highFat],
+    "Mole Negro Oaxaqueño": [.poultry, .nightshade, .caffeine, .sugar, .treeNut, .sesame, .gluten, .alliums, .seedOil, .sulfites, .spicy],
+    "Cochinita Pibil": [.pork, .alliums, .nightshade, .corn, .starch, .spicy, .highFat, .acidic],
+    "Chiles en Nogada": [.pork, .beef, .nightshade, .treeNut, .dairy, .sugar, .egg, .sulfites, .alliums, .highFat],
     // Thai
-    "Pad Krapow": [.poultry, .nightshade, .alliums, .fish, .soy, .gluten, .shellfish, .sugar, .egg, .starch, .seedOil, .salty],
+    "Pad Krapow": [.poultry, .nightshade, .alliums, .fish, .soy, .gluten, .shellfish, .sugar, .egg, .starch, .seedOil, .salty, .spicy],
     "Kai Jeow Omelette": [.egg, .fish, .seedOil, .salty, .starch],
-    "Pad Thai": [.starch, .egg, .shellfish, .peanut, .soy, .fish, .sugar, .alliums, .nightshade, .seedOil, .salty],
-    "Khao Yam Rice Salad": [.starch, .fish, .fermented, .shellfish, .alliums, .salty],
-    "Massaman Curry": [.beef, .peanut, .rootVeg, .nightshade, .alliums, .fish, .shellfish, .sugar, .seedOil],
-    "Gaeng Tai Pla": [.fish, .fermented, .shellfish, .nightshade, .alliums, .salty],
-    "Khao Soi": [.poultry, .gluten, .egg, .starch, .nightshade, .alliums, .fish, .shellfish, .seedOil, .sugar],
+    "Pad Thai": [.starch, .egg, .shellfish, .peanut, .soy, .fish, .sugar, .alliums, .nightshade, .seedOil, .salty, .spicy, .acidic],
+    "Khao Yam Rice Salad": [.starch, .fish, .fermented, .shellfish, .alliums, .salty, .acidic],
+    "Massaman Curry": [.beef, .peanut, .rootVeg, .nightshade, .alliums, .fish, .shellfish, .sugar, .seedOil, .spicy, .highFat],
+    "Gaeng Tai Pla": [.fish, .fermented, .shellfish, .nightshade, .alliums, .salty, .spicy, .acidic],
+    "Khao Soi": [.poultry, .gluten, .egg, .starch, .nightshade, .alliums, .fish, .shellfish, .seedOil, .sugar, .spicy, .highFat],
     "Chor Muang Dumplings": [.starch, .pork, .alliums, .fish, .sugar],
     // Vietnamese
-    "Gỏi Cuốn": [.shellfish, .pork, .starch, .peanut, .soy, .gluten, .sugar, .alliums],
-    "Bánh Mì": [.gluten, .starch, .pork, .egg, .soy, .sugar, .fermented, .alliums, .nightshade, .salty],
-    "Bún Chả": [.pork, .starch, .fish, .sugar, .alliums, .nightshade, .salty],
+    "Gỏi Cuốn": [.shellfish, .pork, .starch, .peanut, .soy, .gluten, .sugar, .alliums, .acidic],
+    "Bánh Mì": [.gluten, .starch, .pork, .egg, .soy, .sugar, .fermented, .alliums, .nightshade, .salty, .spicy, .acidic],
+    "Bún Chả": [.pork, .starch, .fish, .sugar, .alliums, .nightshade, .salty, .acidic],
     "Cao Lầu of Hội An": [.pork, .starch, .soy, .alliums, .sugar, .seedOil],
-    "Phở Bò": [.beef, .starch, .fish, .alliums, .sugar, .salty],
-    "Chả Cá Lã Vọng": [.fish, .starch, .peanut, .shellfish, .fermented, .alliums, .seedOil],
-    "Bánh Xèo": [.shellfish, .pork, .starch, .seedOil, .fish, .sugar, .alliums, .legumes],
-    "Bánh Bèo of Huế": [.starch, .shellfish, .pork, .fish, .seedOil, .sugar, .alliums],
+    "Phở Bò": [.beef, .starch, .fish, .alliums, .sugar, .salty, .acidic],
+    "Chả Cá Lã Vọng": [.fish, .starch, .peanut, .shellfish, .fermented, .alliums, .seedOil, .highFat],
+    "Bánh Xèo": [.shellfish, .pork, .starch, .seedOil, .fish, .sugar, .alliums, .legumes, .highFat],
+    "Bánh Bèo of Huế": [.starch, .shellfish, .pork, .fish, .seedOil, .sugar, .alliums, .highFat],
 ]

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PackOpeningView: View {
     let recipes: [Recipe]
+    var restrictions: Set<String> = []
     let onFinish: () -> Void
 
     private enum Stage { case sealed, bursting, reveal, summary }
@@ -69,9 +70,13 @@ struct PackOpeningView: View {
 
     private var packStage: some View {
         VStack(spacing: 28) {
-            Text(stage == .sealed ? "Your starter pack" : " ")
-                .font(.display(26))
-                .foregroundStyle(Color.ink)
+            VStack(spacing: 10) {
+                Text("Your starter pack")
+                    .font(.display(26))
+                dietBadge
+            }
+            .foregroundStyle(Color.ink)
+            .opacity(stage == .sealed ? 1 : 0)
             ZStack {
                 deckInsidePack
                 tearablePack
@@ -331,6 +336,41 @@ struct PackOpeningView: View {
         }
     }
 
+    // MARK: Diet
+
+    private var filters: [String] { recipeFilters(in: restrictions) }
+
+    /// Says the pack was matched to the cook's diet, and owns up when few recipes fit.
+    @ViewBuilder
+    private var dietBadge: some View {
+        if !filters.isEmpty {
+            VStack(spacing: 4) {
+                HStack(spacing: 6) {
+                    Sparkle().fill(.white).frame(width: 11, height: 11)
+                    Text("Every card fits your diet")
+                        .font(.display(12))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(Color.ink, in: .capsule)
+                Text(filters.joined(separator: " · "))
+                    .font(.text(12))
+                    .foregroundStyle(Color.gray4)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                if recipes.count < StarterPack.size {
+                    Text("Only \(recipes.count) of our recipes fit right now, so your pack is smaller.")
+                        .font(.text(12))
+                        .foregroundStyle(Color.gray4)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal, 30)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     // MARK: Summary
 
     private var summaryStage: some View {
@@ -342,6 +382,8 @@ struct PackOpeningView: View {
                 Text("Tap a card to see what makes it rare")
                     .font(.text(14))
                     .foregroundStyle(foreground.opacity(0.7))
+                dietBadge
+                    .padding(.top, 6)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 12) {
                 ForEach(recipes.reversed()) { recipe in

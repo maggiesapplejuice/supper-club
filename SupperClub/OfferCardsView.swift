@@ -87,6 +87,7 @@ struct OfferCardsView: View {
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
+        .scrollEdgeFade()
     }
 
     @ViewBuilder

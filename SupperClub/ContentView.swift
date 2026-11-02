@@ -6,7 +6,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if let pack = model.unopenedPack {
-                PackOpeningView(recipes: pack, onFinish: model.collectPack)
+                PackOpeningView(recipes: pack, restrictions: model.restrictions, onFinish: model.collectPack)
             } else if model.isFinished {
                 MainTabView(model: model)
             } else {

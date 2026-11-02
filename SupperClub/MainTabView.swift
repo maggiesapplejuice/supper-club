@@ -78,6 +78,24 @@ struct InkChip: View {
     }
 }
 
+extension View {
+    /// Fades a horizontal chip row into the page at both edges, so it reads as swipeable.
+    func scrollEdgeFade() -> some View {
+        mask {
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.05),
+                    .init(color: .black, location: 0.85),
+                    .init(color: .clear, location: 1),
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+    }
+}
+
 struct InkSearchField: View {
     let placeholder: String
     @Binding var text: String

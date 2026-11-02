@@ -155,6 +155,7 @@ struct DiscoverView: View {
                 .padding(.vertical, 2)
             }
             .scrollIndicators(.hidden)
+            .scrollEdgeFade()
 
             if results.isEmpty {
                 ContentUnavailableView("No recipes found", systemImage: "magnifyingglass")
