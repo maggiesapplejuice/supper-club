@@ -62,6 +62,8 @@ struct PackOpeningView: View {
     /// The screen inverts to black only for the Legendary, so the foil is the one burst of color.
     private var isDark: Bool { stage == .reveal && current.tier.isHolographic }
     private var foreground: Color { isDark ? .white : .ink }
+    /// Lower tiers arrive smaller, so a rarer card feels bigger the moment it lands.
+    private var revealScale: CGFloat { 0.84 + 0.04 * CGFloat(current.tier.rawValue) }
 
     // MARK: Sealed pack
 
@@ -185,7 +187,7 @@ struct PackOpeningView: View {
             ZStack {
                 if index + 1 < recipes.count {
                     CardBackView(width: cardWidth)
-                        .scaleEffect(0.94)
+                        .scaleEffect(revealScale * 0.94)
                         .offset(y: 10)
                         .opacity(0.8)
                 }
@@ -208,6 +210,7 @@ struct PackOpeningView: View {
                         width: cardWidth,
                         extraTilt: CGPoint(x: dragX / 180, y: 0)
                     )
+                    .scaleEffect(revealScale)
                     .shadow(color: .white.opacity(current.tier.isHolographic ? 0.5 : 0), radius: 26)
                 } else {
                     CardBackView(width: cardWidth)
@@ -240,8 +243,8 @@ struct PackOpeningView: View {
         VStack(spacing: 6) {
             if isFaceUp {
                 Text(current.tier.name)
-                    .font(.display(28))
-                    .foregroundStyle(foreground)
+                    .font(current.tier == .common ? .text(18) : .display(18 + 6 * CGFloat(current.tier.rawValue)))
+                    .foregroundStyle(current.tier == .common ? Color.gray4 : foreground)
                 Text(index + 1 < recipes.count
                     ? "Swipe for the next card · Tap to see its rarity"
                     : "Swipe to finish · Tap to see its rarity")

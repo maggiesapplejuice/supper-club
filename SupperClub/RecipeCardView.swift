@@ -2,7 +2,9 @@ import CoreMotion
 import SwiftUI
 
 /// The printed card. `tilt` runs from -1 to 1 on each axis and drives the holographic foil.
-/// Rarity reads through line weight and sparkles: Epic inverts to black, Legendary is the only card in color.
+/// Each tier steps up everything at once, so rarity reads at a glance:
+/// Common is flat and quiet, Uncommon gets a panel and outline, Rare adds halftone, a double frame and a hard shadow,
+/// Epic inverts to black with a sunburst, and Legendary is the only card in color.
 struct RecipeCardView: View {
     let recipe: Recipe
     let width: CGFloat
@@ -28,7 +30,7 @@ struct RecipeCardView: View {
                 header
                 art
                 Text(recipe.name)
-                    .font(.display(22 * unit))
+                    .font(tier == .common ? .text(20 * unit) : .display(nameSize * unit))
                     .foregroundStyle(isDark ? .white : Color.ink)
                     .lineLimit(2, reservesSpace: true)
                     .minimumScaleFactor(0.8)
@@ -40,13 +42,33 @@ struct RecipeCardView: View {
                 .font(.text(13 * unit))
                 .foregroundStyle(isDark ? .white.opacity(0.8) : Color.gray4)
             }
-            .padding(16 * unit)
+            .padding(tier >= .rare ? 20 * unit : 16 * unit)
         }
         .frame(width: width, height: height)
         .clipShape(.rect(cornerRadius: 24 * unit))
         .overlay {
             RoundedRectangle(cornerRadius: 24 * unit)
                 .strokeBorder(borderStyle, lineWidth: borderWidth * unit)
+        }
+        .overlay {
+            if tier >= .rare {
+                RoundedRectangle(cornerRadius: 17 * unit)
+                    .strokeBorder(isDark ? Color.white : Color.ink, lineWidth: 1.5 * unit)
+                    .padding(8 * unit)
+            }
+        }
+        .overlay {
+            // Keeps a black card visibly separate from its black shadow.
+            if tier == .epic {
+                RoundedRectangle(cornerRadius: 24 * unit)
+                    .stroke(Color.paper, lineWidth: 3 * unit)
+            }
+        }
+        .background {
+            RoundedRectangle(cornerRadius: 24 * unit)
+                .fill(Color.ink)
+                .offset(x: shadowOffset * unit, y: shadowOffset * unit)
+                .opacity(shadowOffset > 0 ? 1 : 0)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(recipe.name), \(tier.name) \(recipe.cuisine) recipe card")
@@ -68,17 +90,59 @@ struct RecipeCardView: View {
     }
 
     private var art: some View {
-        InkGlyphView(emoji: recipe.emoji, size: 140 * unit)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        InkGlyphView(emoji: recipe.emoji, size: glyphSize * unit)
             .background {
-                ZStack {
-                    isDark ? Color.white : Color.gray1
-                    if isHolo {
-                        HolographicFoil.rainbow(tilt: tilt).opacity(0.5)
-                    }
+                if tier >= .epic {
+                    Circle().fill(.white).padding(-16 * unit)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background { TierBackdrop(tier: tier, tilt: tilt, unit: unit) }
+            .overlay(alignment: .bottomLeading) { tierLabel }
             .clipShape(.rect(cornerRadius: 16 * unit))
+    }
+
+    @ViewBuilder
+    private var tierLabel: some View {
+        if tier > .common {
+            let isFilled = tier == .rare
+            Text(tier.name)
+                .font(.display(12 * unit))
+                .foregroundStyle(isFilled ? .white : Color.ink)
+                .padding(.horizontal, 10 * unit)
+                .padding(.vertical, 5 * unit)
+                .background(isFilled ? Color.ink : .white, in: .capsule)
+                .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5 * unit) }
+                .padding(8 * unit)
+        }
+    }
+
+    private var glyphSize: CGFloat {
+        switch tier {
+        case .common: 84
+        case .uncommon: 112
+        case .rare: 132
+        case .epic: 128
+        case .legendary: 136
+        }
+    }
+
+    private var nameSize: CGFloat {
+        switch tier {
+        case .common: 20
+        case .uncommon: 21
+        case .rare: 23
+        case .epic: 25
+        case .legendary: 26
+        }
+    }
+
+    private var shadowOffset: CGFloat {
+        switch tier {
+        case .common, .uncommon: 0
+        case .rare: 6
+        case .epic, .legendary: 10
+        }
     }
 
     private var minutesText: String {
@@ -87,16 +151,16 @@ struct RecipeCardView: View {
 
     private var borderWidth: CGFloat {
         switch tier {
-        case .common: 2
+        case .common: 1.5
         case .uncommon: 3
         case .rare: 5
-        case .epic, .legendary: 6
+        case .epic, .legendary: 7
         }
     }
 
     private var borderStyle: AnyShapeStyle {
         switch tier {
-        case .common: AnyShapeStyle(Color.gray3)
+        case .common: AnyShapeStyle(Color.gray2)
         case .uncommon, .rare, .epic: AnyShapeStyle(Color.ink)
         case .legendary:
             AnyShapeStyle(AngularGradient(
@@ -104,6 +168,66 @@ struct RecipeCardView: View {
                 center: .center,
                 angle: .degrees(tilt.x * 90)
             ))
+        }
+    }
+}
+
+/// The art panel behind the dish, which gets louder with each tier.
+private struct TierBackdrop: View {
+    let tier: RarityTier
+    let tilt: CGPoint
+    let unit: CGFloat
+
+    var body: some View {
+        switch tier {
+        case .common:
+            Color.clear
+        case .uncommon:
+            Color.gray1
+        case .rare:
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let spacing = 11 * unit
+                let reach = hypot(center.x, center.y)
+                for x in stride(from: 0, to: size.width + spacing, by: spacing) {
+                    for y in stride(from: 0, to: size.height + spacing, by: spacing) {
+                        // Halftone: dots grow toward the panel's edges.
+                        let radius = 3.6 * unit * hypot(x - center.x, y - center.y) / reach
+                        let dot = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
+                        context.fill(Path(ellipseIn: dot), with: .color(.ink))
+                    }
+                }
+            }
+            .background(Color.white)
+        case .epic:
+            Canvas { context, size in
+                drawRays(in: &context, size: size, color: .white)
+            }
+            .background(Color.ink)
+        case .legendary:
+            ZStack {
+                Color.white
+                HolographicFoil.rainbow(tilt: tilt).opacity(0.55)
+                Canvas { context, size in
+                    drawRays(in: &context, size: size, color: .white.opacity(0.55))
+                }
+            }
+        }
+    }
+
+    private func drawRays(in context: inout GraphicsContext, size: CGSize, color: Color) {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let reach = hypot(size.width, size.height)
+        let rays = 14
+        for index in 0..<rays {
+            let start = Double(index) / Double(rays) * 2 * .pi
+            let end = start + .pi / Double(rays)
+            var ray = Path()
+            ray.move(to: center)
+            ray.addLine(to: CGPoint(x: center.x + cos(start) * reach, y: center.y + sin(start) * reach))
+            ray.addLine(to: CGPoint(x: center.x + cos(end) * reach, y: center.y + sin(end) * reach))
+            ray.closeSubpath()
+            context.fill(ray, with: .color(color))
         }
     }
 }
