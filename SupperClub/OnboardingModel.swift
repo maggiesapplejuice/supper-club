@@ -74,6 +74,8 @@ final class OnboardingModel {
     var cuisines: Set<String> = []
     var restrictions: Set<String> = []
     var isFinished = false
+    var collection: [Recipe] = []
+    var unopenedPack: [Recipe]?
 
     // No backend yet: logging in and signing up only move through the flow.
     func logIn() {
@@ -89,6 +91,14 @@ final class OnboardingModel {
     }
 
     func finish() {
+        if let experience {
+            unopenedPack = StarterPack.build(experience: experience, cuisines: cuisines)
+        }
         isFinished = true
+    }
+
+    func collectPack() {
+        collection += unopenedPack ?? []
+        unopenedPack = nil
     }
 }

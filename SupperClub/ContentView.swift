@@ -4,8 +4,10 @@ struct ContentView: View {
     @State private var model = OnboardingModel()
 
     var body: some View {
-        if model.isFinished {
-            HomePlaceholderView()
+        if let pack = model.unopenedPack {
+            PackOpeningView(recipes: pack, onFinish: model.collectPack)
+        } else if model.isFinished {
+            CollectionView(recipes: model.collection)
         } else {
             NavigationStack(path: $model.path) {
                 LoginView(model: model)
@@ -27,23 +29,6 @@ struct ContentView: View {
         case .restrictions: RestrictionStepView(model: model)
         case .location: LocationStepView(model: model)
         }
-    }
-}
-
-/// Stands in for the Discover screen until the trading flow is built.
-private struct HomePlaceholderView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "fork.knife")
-                .font(.largeTitle)
-                .foregroundStyle(Color.brandPrimary)
-            Text("You're all set")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.brandText)
-            Text("The trading flow goes here next.")
-                .foregroundStyle(Color.gray4)
-        }
-        .padding()
     }
 }
 
