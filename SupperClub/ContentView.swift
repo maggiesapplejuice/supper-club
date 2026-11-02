@@ -8,7 +8,7 @@ struct ContentView: View {
             if let pack = model.unopenedPack {
                 PackOpeningView(recipes: pack, onFinish: model.collectPack)
             } else if model.isFinished {
-                CollectionView(recipes: model.collection)
+                MainTabView(model: model)
             } else {
                 NavigationStack(path: $model.path) {
                     LoginView(model: model)

@@ -76,6 +76,12 @@ final class OnboardingModel {
     var isFinished = false
     var collection: [Recipe] = []
     var unopenedPack: [Recipe]?
+    var trades: [TradeOffer] = []
+    var savedCardIDs: Set<String> = []
+
+    var pendingCardIDs: Set<String> {
+        Set(trades.flatMap { $0.offered.map(\.id) })
+    }
 
     // No backend yet: logging in and signing up only move through the flow.
     func logIn() {
@@ -95,6 +101,14 @@ final class OnboardingModel {
             unopenedPack = StarterPack.build(experience: experience, cuisines: cuisines)
         }
         isFinished = true
+    }
+
+    func send(offered: [Recipe], requested: Recipe) {
+        trades.insert(TradeOffer(offered: offered, requested: requested), at: 0)
+    }
+
+    func cancel(_ trade: TradeOffer) {
+        trades.removeAll { $0.id == trade.id }
     }
 
     func collectPack() {
