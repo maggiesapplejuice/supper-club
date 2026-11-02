@@ -170,7 +170,7 @@ struct InspectCardView: View {
             }
             GridRow {
                 statView("card rarity", recipe.tier.name)
-                statView("trade frequency", recipe.tradeFrequency)
+                statView("trading frequency", recipe.tradeFrequency)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

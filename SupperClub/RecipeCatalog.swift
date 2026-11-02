@@ -71,7 +71,7 @@ struct Recipe: Identifiable, Hashable {
             RarityFactor(name: "Technique", detail: "How hard it is to master", points: technique),
             RarityFactor(name: "Ingredients", detail: "How hard they are to find", points: ingredients),
             RarityFactor(name: "Heritage", detail: "How closely tied it is to one place or tradition", points: heritage),
-            RarityFactor(name: "Trade frequency", detail: "Fewer trades earn more points", points: tradeScarcity),
+            RarityFactor(name: "Trading frequency", detail: "Fewer trades earn more points", points: tradeScarcity),
         ]
     }
 }

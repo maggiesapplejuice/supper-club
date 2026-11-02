@@ -47,6 +47,7 @@ struct DiscoverGlobe: View {
                         Button { select(group.city) } label: {
                             CityPin(
                                 city: group.city,
+                                emoji: group.recipes.first?.emoji ?? "🍲",
                                 count: group.recipes.count,
                                 isSelected: group.city == selectedCity,
                                 showsName: distance < Self.labelDistance || group.city == selectedCity
@@ -191,31 +192,35 @@ struct DiscoverGlobe: View {
     }
 }
 
-/// A round ink pin with the city's dish count, and its name once you're close enough to read it.
+/// The city's signature dish as a little ink icon, with a count badge and, up close, the city's name.
 private struct CityPin: View {
     let city: DishCity
+    let emoji: String
     let count: Int
     let isSelected: Bool
     let showsName: Bool
 
     var body: some View {
         VStack(spacing: 3) {
-            if showsName {
-                Text("\(count)")
-                    .font(.display(isSelected ? 15 : 12))
-                    .foregroundStyle(isSelected ? Color.ink : .white)
-                    .frame(width: isSelected ? 36 : 26, height: isSelected ? 36 : 26)
-                    .background(isSelected ? .white : Color.ink, in: .circle)
-                    .overlay { Circle().stroke(isSelected ? Color.ink : .white, lineWidth: 2) }
-            } else {
-                // From far away the pins shrink to dots so neighboring cities don't pile up.
-                Circle()
-                    .fill(Color.ink)
-                    .overlay { Circle().stroke(.white, lineWidth: 2) }
-                    .frame(width: 13, height: 13)
-                    .frame(width: 28, height: 28)
-                    .contentShape(.rect)
-            }
+            // From far away the icons shrink so neighboring cities don't pile up.
+            let size: CGFloat = isSelected ? 50 : (showsName ? 40 : 20)
+            InkGlyphView(emoji: emoji, size: size * 0.78)
+                .frame(width: size, height: size)
+                .background(.white, in: .circle)
+                .overlay { Circle().stroke(Color.ink, lineWidth: isSelected ? 3 : 2) }
+                .overlay(alignment: .topTrailing) {
+                    if showsName {
+                        Text("\(count)")
+                            .font(.display(10))
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .background(Color.ink, in: .circle)
+                            .overlay { Circle().stroke(.white, lineWidth: 1.5) }
+                            .offset(x: 5, y: -5)
+                    }
+                }
+                .frame(width: max(size, 30), height: max(size, 30))
+                .contentShape(.rect)
             if showsName {
                 Text(city.name)
                     .font(.display(10))

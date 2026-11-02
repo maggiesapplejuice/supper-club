@@ -148,58 +148,115 @@ struct OfferCardsView: View {
     private var confirmModal: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
-                Text("Confirm Trade")
-                    .font(.display(24))
-                Text("review your offer before sending")
+                Text("Confirm Trade Request")
+                    .font(.display(22))
+                Text("Review your offer before sending.")
                     .font(.text(13))
                     .foregroundStyle(Color.gray4)
             }
             .foregroundStyle(Color.ink)
 
-            HStack(alignment: .top, spacing: 8) {
-                tradeSide(label: "you give") {
-                    CardFan(recipes: selection, cardWidth: 92)
+            tradeFaceOff
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text("YOU ARE TRADING")
+                    .font(.display(11))
+                    .tracking(1)
+                    .foregroundStyle(Color.gray4)
+                    .padding(.bottom, 6)
+                ForEach(Array(selection.enumerated()), id: \.element.id) { index, card in
+                    if index > 0 { Divider() }
+                    tradeRow(card)
                 }
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.ink, in: .circle)
-                    .padding(.top, 70)
-                    .accessibilityHidden(true)
-                tradeSide(label: "you get") {
-                    LiveCardView(recipe: requested, width: 92)
+            }
+            .padding(14)
+            .background(Color.gray1, in: .rect(cornerRadius: 18))
+
+            VStack(spacing: 10) {
+                PrimaryButton(title: "CONFIRM REQUEST") {
+                    model.send(offered: selection, requested: requested)
+                    step = .sent
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.6))
+                        onSent()
+                    }
                 }
+                SecondaryButton(title: "Cancel") { step = .choosing }
             }
 
-            PrimaryButton(title: "CONFIRM REQUEST") {
-                model.send(offered: selection, requested: requested)
-                step = .sent
-                Task {
-                    try? await Task.sleep(for: .seconds(1.6))
-                    onSent()
-                }
-            }
-            SecondaryButton(title: "Cancel") { step = .choosing }
-            Text("\(requested.owner.name) will get a notification.")
+            Label("\(requested.owner.name) will get a notification.", systemImage: "info.circle.fill")
                 .font(.text(12))
                 .foregroundStyle(Color.gray4)
         }
         .padding(20)
         .background(Color.paper, in: .rect(cornerRadius: 28))
         .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.ink, lineWidth: 2.5) }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
+    }
+
+    /// Your cards and theirs side by side, leaning in, with the swap between them.
+    private var tradeFaceOff: some View {
+        HStack(alignment: .top, spacing: 6) {
+            tradeSide(label: "you give") {
+                CardFan(recipes: selection, cardWidth: 112)
+                    .rotationEffect(.degrees(-4))
+            }
+            tradeSide(label: "you get") {
+                LiveCardView(recipe: requested, width: 112)
+                    .rotationEffect(.degrees(4))
+            }
+        }
+        .overlay {
+            Image(systemName: "arrow.left.arrow.right")
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(Color.ink, in: .circle)
+                .overlay { Circle().stroke(Color.paper, lineWidth: 3) }
+                .offset(y: 14)
+                .accessibilityHidden(true)
+        }
     }
 
     private func tradeSide<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 10) {
-            Text(label)
-                .font(.display(13))
+            Text(label.uppercased())
+                .font(.display(11))
+                .tracking(1)
                 .foregroundStyle(Color.ink)
+                .padding(.horizontal, 10)
+                .frame(height: 22)
+                .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
             content()
-                .frame(height: 150)
+                .frame(height: 170)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func tradeRow(_ card: Recipe) -> some View {
+        HStack(spacing: 10) {
+            RecipeCardView(recipe: card, width: 34)
+            Text(card.tier.name.uppercased())
+                .font(.display(9))
+                .foregroundStyle(card.tier >= .rare ? .white : Color.ink)
+                .padding(.horizontal, 7)
+                .frame(height: 20)
+                .background(card.tier >= .rare ? Color.ink : .white, in: .rect(cornerRadius: 5))
+                .overlay { RoundedRectangle(cornerRadius: 5).stroke(Color.ink, lineWidth: 1.5) }
+            Text(card.name)
+                .font(.display(14))
+                .foregroundStyle(Color.ink)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Image(systemName: "checkmark")
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(Color.ink, in: .circle)
+                .accessibilityHidden(true)
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
     }
 
     private var sentModal: some View {

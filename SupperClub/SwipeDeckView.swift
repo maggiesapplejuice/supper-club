@@ -16,15 +16,19 @@ struct SwipeDeckView: View {
     @State private var leaving: Choice?
     @State private var lastWanted: Recipe?
     @State private var decisions = 0
+    /// Bumped each time the cook sits on a card too long, which plays a little "swipe me" wiggle.
+    @State private var nudges = 0
+    @State private var nudgeOffset: CGFloat = 0
 
     private let swipeThreshold: CGFloat = 110
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var remaining: [Recipe] {
         recipes.filter { !passed.contains($0.id) && !model.interested.contains($0) }
     }
 
     /// -1 fully left, 1 fully right.
-    private var progress: CGFloat { max(-1, min(1, drag.width / swipeThreshold)) }
+    private var progress: CGFloat { max(-1, min(1, (drag.width + nudgeOffset) / swipeThreshold)) }
 
     var body: some View {
         VStack(spacing: 14) {
@@ -44,6 +48,14 @@ struct SwipeDeckView: View {
         .padding(.bottom, 8)
         .overlay(alignment: .top) { savedToast }
         .sensoryFeedback(.impact(weight: .medium), trigger: decisions)
+        .sensoryFeedback(.impact(weight: .light), trigger: nudges)
+        // Restarts whenever the top card changes or the cook touches it, so it only fires on a real pause.
+        .task(id: "\(remaining.first?.id ?? "")-\(decisions)-\(drag == .zero)") {
+            guard drag == .zero, !remaining.isEmpty else { return }
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            await nudge()
+        }
         .sensoryFeedback(.selection, trigger: abs(progress) >= 1)
     }
 
@@ -90,7 +102,8 @@ struct SwipeDeckView: View {
             .scaleEffect(1 - 0.05 * lift)
             .offset(y: 16 * lift)
             .offset(isTop ? drag : .zero)
-            .rotationEffect(.degrees(isTop ? Double(drag.width / 18) : 0), anchor: .bottom)
+            .offset(x: isTop ? nudgeOffset : 0)
+            .rotationEffect(.degrees(isTop ? Double((drag.width + nudgeOffset) / 18) : 0), anchor: .bottom)
             .allowsHitTesting(isTop)
             .gesture(isTop ? dragGesture(recipe) : nil)
             .onTapGesture { if isTop { onInspect(recipe) } }
@@ -121,6 +134,16 @@ struct SwipeDeckView: View {
             .padding(.vertical, 8)
             .background(filled ? Color.ink : .white, in: .rect(cornerRadius: 12))
             .overlay { RoundedRectangle(cornerRadius: 12).stroke(filled ? .white : Color.ink, lineWidth: 3) }
+    }
+
+    /// Leans the card right then left, so the swipe directions are obvious without a tutorial.
+    private func nudge() async {
+        guard !reduceMotion else { return }
+        nudges += 1
+        for x: CGFloat in [44, -32, 0] {
+            withAnimation(.spring(duration: 0.35, bounce: 0.35)) { nudgeOffset = x }
+            try? await Task.sleep(for: .seconds(0.3))
+        }
     }
 
     private func dragGesture(_ recipe: Recipe) -> some Gesture {

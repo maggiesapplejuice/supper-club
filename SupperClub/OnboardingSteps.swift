@@ -89,16 +89,13 @@ struct RestrictionStepView: View {
         StepScaffold(
             step: 4,
             title: "Any allergies or dietary restrictions?",
-            subtitle: "Select all that apply, even the niche ones. Add anything we missed at the bottom.",
+            subtitle: "Optional. Select all that apply, even the niche ones, or skip if none apply.",
             onBack: model.goBack
         ) {
             RestrictionPicker(selection: $model.restrictions)
         } footer: {
-            PrimaryButton(title: "CONTINUE →", isEnabled: !model.restrictions.isEmpty) {
-                model.path.append(.location)
-            }
-            SecondaryButton(title: "Skip") {
-                model.restrictions.removeAll()
+            // Nothing selected is a fine answer, so the button never blocks the cook.
+            PrimaryButton(title: model.restrictions.isEmpty ? "SKIP, NO RESTRICTIONS →" : "CONTINUE →") {
                 model.path.append(.location)
             }
         }

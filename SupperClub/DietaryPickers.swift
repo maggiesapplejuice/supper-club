@@ -123,7 +123,7 @@ struct CuisinePicker: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], spacing: 12) {
-            ForEach(cuisineOptions) { cuisine in
+            ForEach(cuisineOptions.sorted { $0.name < $1.name }) { cuisine in
                 CuisineTile(cuisine: cuisine, isSelected: selection.contains(cuisine.name)) {
                     selection.formSymmetricDifference([cuisine.name])
                 }
