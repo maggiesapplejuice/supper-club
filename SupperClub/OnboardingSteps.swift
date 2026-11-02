@@ -73,51 +73,12 @@ struct CuisineStepView: View {
             subtitle: "Select all that apply. This helps us tailor your recipe feed.",
             onBack: model.goBack
         ) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], spacing: 12) {
-                ForEach(cuisineOptions) { cuisine in
-                    CuisineTile(cuisine: cuisine, isSelected: model.cuisines.contains(cuisine.name)) {
-                        model.cuisines.formSymmetricDifference([cuisine.name])
-                    }
-                }
-            }
+            CuisinePicker(selection: $model.cuisines)
         } footer: {
             PrimaryButton(title: "CONTINUE →", isEnabled: !model.cuisines.isEmpty) {
                 model.path.append(.restrictions)
             }
         }
-    }
-}
-
-private struct CuisineTile: View {
-    let cuisine: OnboardingOption
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                InkGlyphView(emoji: cuisine.emoji, size: 84)
-                    .frame(maxWidth: .infinity, minHeight: 104)
-                Text(cuisine.name)
-                    .font(.display(13))
-                    .foregroundStyle(Color.brandText)
-            }
-            .padding(8)
-            .background(isSelected ? Color.gray1 : .white, in: .rect(cornerRadius: 20))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(isSelected ? Color.ink : Color.gray2, lineWidth: isSelected ? 2.5 : 2)
-            }
-            .overlay(alignment: .topTrailing) {
-                if isSelected {
-                    Sparkle()
-                        .fill(Color.ink)
-                        .frame(width: 24, height: 24)
-                        .padding(10)
-                }
-            }
-        }
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -128,20 +89,10 @@ struct RestrictionStepView: View {
         StepScaffold(
             step: 4,
             title: "Any allergies or dietary restrictions?",
-            subtitle: "Select all that apply. We'll filter your results accordingly.",
+            subtitle: "Select all that apply, even the niche ones. Add anything we missed at the bottom.",
             onBack: model.goBack
         ) {
-            VStack(spacing: 12) {
-                ForEach(restrictionOptions) { option in
-                    OptionRow(
-                        emoji: option.emoji,
-                        title: option.name,
-                        isSelected: model.restrictions.contains(option.name)
-                    ) {
-                        model.restrictions.formSymmetricDifference([option.name])
-                    }
-                }
-            }
+            RestrictionPicker(selection: $model.restrictions)
         } footer: {
             PrimaryButton(title: "CONTINUE →", isEnabled: !model.restrictions.isEmpty) {
                 model.path.append(.location)

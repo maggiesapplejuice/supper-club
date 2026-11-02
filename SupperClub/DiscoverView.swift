@@ -22,11 +22,13 @@ struct DiscoverView: View {
     @State private var feed: [Recipe] = []
     @State private var visibleID: String?
     @State private var surpriseCount = 0
+    @State private var dietOnly = true
 
     private var results: [Recipe] {
         feed.filter { recipe in
             !model.collection.contains(recipe)
                 && (cuisine == nil || recipe.cuisine == cuisine)
+                && (!dietOnly || recipe.fits(model.restrictions))
                 && (search.isEmpty
                     || recipe.name.localizedCaseInsensitiveContains(search)
                     || recipe.cuisine.localizedCaseInsensitiveContains(search))
@@ -135,6 +137,13 @@ struct DiscoverView: View {
 
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
+                    if !model.restrictions.isEmpty {
+                        InkChip(title: "Fits my diet", isSelected: dietOnly) { dietOnly.toggle() }
+                        Rectangle()
+                            .fill(Color.ink)
+                            .frame(width: 2, height: 22)
+                            .accessibilityHidden(true)
+                    }
                     InkChip(title: "All", isSelected: cuisine == nil) { cuisine = nil }
                     ForEach(cuisineOptions) { option in
                         InkChip(title: option.name, isSelected: cuisine == option.name) {

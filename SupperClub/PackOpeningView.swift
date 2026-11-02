@@ -96,7 +96,7 @@ struct PackOpeningView: View {
     private var tearablePack: some View {
         TimelineView(.animation) { timeline in
             let time = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
-            let foil = PackFoil(size: packSize, time: time)
+            let foil = PackFoil(size: packSize, time: time, cardCount: recipes.count)
             let width = packSize.width
 
             ZStack(alignment: .topLeading) {
@@ -405,6 +405,7 @@ struct PackOpeningView: View {
 private struct PackFoil: View {
     let size: CGSize
     let time: Double
+    let cardCount: Int
 
     var body: some View {
         let shift = sin(time * 0.8) * 0.35
@@ -421,7 +422,7 @@ private struct PackFoil: View {
                     .font(.display(30))
                 Text("starter pack")
                     .font(.text(15))
-                Text("6 recipe cards")
+                Text("\(cardCount) recipe cards")
                     .font(.text(12))
                     .foregroundStyle(Color.gray4)
                     .padding(.top, 8)

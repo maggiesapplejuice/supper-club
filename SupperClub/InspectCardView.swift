@@ -18,6 +18,9 @@ struct InspectCardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 6)
                     titleBlock
+                    if !model.restrictions.isEmpty {
+                        dietFit
+                    }
                     people
                     stats
                     recentTrades
@@ -89,6 +92,44 @@ struct InspectCardView: View {
                     .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
             }
         }
+    }
+
+    private var dietFit: some View {
+        let conflicts = recipe.conflicts(with: model.restrictions)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                if conflicts.isEmpty {
+                    Sparkle().fill(Color.ink).frame(width: 16, height: 16)
+                } else {
+                    Image(systemName: "exclamationmark")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(.white)
+                        .frame(width: 20, height: 20)
+                        .background(Color.ink, in: .circle)
+                }
+                Text(conflicts.isEmpty ? "Fits your diet" : "Doesn't fit your diet")
+                    .font(.display(15))
+            }
+            if conflicts.isEmpty {
+                Text("Checked against \(model.restrictions.count) restrictions.")
+                    .font(.text(13))
+                    .foregroundStyle(Color.gray4)
+            } else {
+                ForEach(conflicts, id: \.self) { conflict in
+                    Text("\(conflict.restriction): \(conflict.reason)")
+                        .font(.text(13))
+                }
+            }
+        }
+        .foregroundStyle(Color.ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(conflicts.isEmpty ? Color.gray1 : .white, in: .rect(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.ink, style: StrokeStyle(lineWidth: 2, dash: conflicts.isEmpty ? [] : [6, 4]))
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var people: some View {

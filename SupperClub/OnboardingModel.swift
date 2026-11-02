@@ -56,14 +56,34 @@ let cuisineOptions = [
     OnboardingOption(name: "Vietnamese", emoji: "🥢"),
 ]
 
-let restrictionOptions = [
-    OnboardingOption(name: "Vegetarian", emoji: "🥦"),
-    OnboardingOption(name: "Vegan", emoji: "🌱"),
-    OnboardingOption(name: "Gluten-free", emoji: "🌾"),
-    OnboardingOption(name: "Nut-free", emoji: "🌰"),
-    OnboardingOption(name: "Dairy-free", emoji: "🥛"),
-    OnboardingOption(name: "Egg-free", emoji: "🥚"),
-    OnboardingOption(name: "Shellfish-free", emoji: "🦐"),
+struct RestrictionGroup: Identifiable {
+    let title: String
+    let emoji: String
+    let options: [String]
+
+    var id: String { title }
+}
+
+let restrictionGroups = [
+    RestrictionGroup(title: "Diets", emoji: "🥦", options: [
+        "Vegetarian", "Vegan", "Pescatarian", "Flexitarian", "Keto", "Paleo", "Whole30",
+        "Low-carb", "Low-FODMAP", "Low-sodium", "Diabetic-friendly", "Raw food", "Carnivore",
+    ]),
+    RestrictionGroup(title: "Allergies & intolerances", emoji: "🌾", options: [
+        "Gluten-free", "Celiac", "Dairy-free", "Lactose-free", "Peanut-free", "Tree nut-free",
+        "Egg-free", "Soy-free", "Shellfish-free", "Fish-free", "Sesame-free", "Mustard-free",
+        "Celery-free", "Lupin-free", "Sulfite-free", "Corn-free", "Nightshade-free",
+        "Alpha-gal (no red meat)",
+    ]),
+    RestrictionGroup(title: "Religious & cultural", emoji: "🥖", options: [
+        "Kosher", "Halal", "Jain", "Sattvic (no onion or garlic)", "Ital", "No beef", "No pork",
+        "Meatless Fridays",
+    ]),
+    RestrictionGroup(title: "Sourcing & sensitivities", emoji: "🌱", options: [
+        "Non-GMO", "Organic", "Locally sourced", "No seed oils", "No artificial dyes",
+        "No added sugar", "Alcohol-free", "Caffeine-free", "Low-histamine",
+        "AIP (autoimmune protocol)", "Low-oxalate",
+    ]),
 ]
 
 @MainActor
@@ -97,8 +117,10 @@ final class OnboardingModel {
     }
 
     func finish() {
+        // A very strict combination of restrictions can leave nothing to put in the pack.
         if let experience {
-            unopenedPack = StarterPack.build(experience: experience, cuisines: cuisines)
+            let pack = StarterPack.build(experience: experience, cuisines: cuisines, restrictions: restrictions)
+            unopenedPack = pack.isEmpty ? nil : pack
         }
         isFinished = true
     }

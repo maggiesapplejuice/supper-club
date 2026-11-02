@@ -170,12 +170,19 @@ enum StarterPack {
     static let size = 6
 
     /// One Legendary near the cook's skill level, plus the closest skill matches spread across their cuisines.
+    /// Only dishes that fit every restriction are used; when the chosen cuisines run short, other cuisines fill in.
     /// Cards are ordered lowest rarity first, so the holographic card is always the last reveal.
-    static func build(experience: CookingExperience, cuisines: Set<String>) -> [Recipe] {
-        let pool = recipeCatalog.filter { cuisines.contains($0.cuisine) }
+    static func build(experience: CookingExperience, cuisines: Set<String>, restrictions: Set<String> = []) -> [Recipe] {
+        let allowed = recipeCatalog.filter { $0.fits(restrictions) }
+        let pool = allowed.filter { cuisines.contains($0.cuisine) }
+        let others = allowed.filter { !cuisines.contains($0.cuisine) }
         let distance = { (recipe: Recipe) in abs(recipe.skill.level - experience.level) }
 
-        let holo = pool.filter { $0.tier == .legendary && distance($0) <= 1 }.randomElement()
+        // Prefer a nearby Legendary from a chosen cuisine, then any from a chosen cuisine, then any that fits.
+        let legendaries = [pool, others].map { $0.filter { $0.tier == .legendary }.shuffled() }
+        let holo = legendaries.lazy.compactMap { group in
+            group.first { distance($0) <= 1 } ?? group.first
+        }.first
 
         var byCuisine = cuisines.sorted().shuffled().map { cuisine in
             pool.filter { $0.cuisine == cuisine && $0.tier != .legendary }
@@ -189,6 +196,9 @@ enum StarterPack {
                 picks.append(byCuisine[index].removeFirst())
             }
         }
+        let fillers = others.filter { $0.tier != .legendary }.shuffled().sorted { distance($0) < distance($1) }
+        picks += fillers.prefix(size - 1 - picks.count)
+
         return picks.sorted { $0.score < $1.score } + (holo.map { [$0] } ?? [])
     }
 }
