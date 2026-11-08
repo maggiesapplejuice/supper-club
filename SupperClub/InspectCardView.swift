@@ -24,6 +24,7 @@ struct InspectCardView: View {
                     }
                     people
                     stats
+                    ingredientsList
                     recentTrades
                 }
                 .padding(20)
@@ -42,7 +43,7 @@ struct InspectCardView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.ink)
                     .frame(width: 44, height: 44)
-                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.ink, lineWidth: 2) }
+                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel("Back")
             Spacer()
@@ -55,7 +56,7 @@ struct InspectCardView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.ink)
                     .frame(width: 44, height: 44)
-                    .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                    .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel("Share")
         }
@@ -90,7 +91,7 @@ struct InspectCardView: View {
                     .foregroundStyle(Color.ink)
                     .padding(.horizontal, 12)
                     .frame(height: 30)
-                    .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
+                    .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
             }
         }
     }
@@ -146,7 +147,7 @@ struct InspectCardView: View {
                 .font(.text(12))
                 .foregroundStyle(Color.gray4)
             HStack(spacing: 8) {
-                InkGlyphView(emoji: "👩‍🍳", size: 32)
+                GlyphBubble(emoji: "👩‍🍳", diameter: 36, fill: .blush)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(person.name)
                         .font(.display(13))
@@ -191,6 +192,25 @@ struct InspectCardView: View {
         .accessibilityElement(children: .combine)
     }
 
+    private var ingredientsList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Ingredients · \(recipe.ingredientList.count)")
+                .font(.display(16))
+                .foregroundStyle(Color.ink)
+                .accessibilityAddTraits(.isHeader)
+            FlowLayout(spacing: 6) {
+                ForEach(recipe.ingredientList, id: \.self) { item in
+                    Text(item.lowercased())
+                        .font(.text(13))
+                        .foregroundStyle(Color.ink)
+                        .padding(.horizontal, 10)
+                        .frame(height: 28)
+                        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
+                }
+            }
+        }
+    }
+
     private var recentTrades: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Recent trades")
@@ -226,7 +246,7 @@ struct InspectCardView: View {
                     .foregroundStyle(isSaved ? .white : Color.ink)
                     .frame(width: 56, height: 56)
                     .background(isSaved ? Color.ink : .white, in: .circle)
-                    .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                    .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel(isSaved ? "Remove from saved" : "Save card")
             .sensoryFeedback(.selection, trigger: isSaved)

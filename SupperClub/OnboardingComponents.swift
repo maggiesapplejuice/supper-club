@@ -1,63 +1,116 @@
 import SwiftUI
 
+/// The main call to action: a pink leaf shape with white caps.
 struct PrimaryButton: View {
     let title: String
     var systemImage: String?
     var isEnabled = true
+    var fill: Color = .rose
     let action: () -> Void
 
+    @State private var taps = 0
+
+    private var textColor: Color { [.sage, .ink, .rose, .grape, .poppy, .periwinkle, .storm].contains(fill) ? .white : .ink }
+
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Sparkle().fill(.white).frame(width: 16, height: 16)
-                Spacer()
-                HStack(spacing: 8) {
-                    if let systemImage {
-                        Image(systemName: systemImage)
-                    }
-                    Text(title)
+        Button {
+            taps += 1
+            action()
+        } label: {
+            HStack(spacing: 8) {
+                if let systemImage {
+                    Image(systemName: systemImage)
                 }
-                .font(.display(14))
-                .tracking(0.6)
-                Spacer()
-                Sparkle().fill(.white).frame(width: 16, height: 16)
+                Text(title.uppercased())
+                    .tracking(1.2)
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 20)
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background(Color.ink.opacity(isEnabled ? 1 : 0.3), in: .capsule)
+            .font(.label(15))
+            .foregroundStyle(textColor)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .background(isEnabled ? fill : Color.blush, in: Leaf.button())
+            .opacity(isEnabled ? 1 : 0.6)
         }
+        .buttonStyle(PressDownStyle())
         .disabled(!isEnabled)
+        .sensoryFeedback(.impact(weight: .medium), trigger: taps)
     }
 }
 
+/// Squashes the button slightly while pressed.
+struct PressDownStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.spring(duration: 0.2, bounce: 0.5), value: configuration.isPressed)
+    }
+}
+
+/// The quieter choice: a butter leaf shape with plum caps.
 struct SecondaryButton: View {
     let title: String
     let action: () -> Void
 
+    @State private var taps = 0
+
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.display(14))
+        Button {
+            taps += 1
+            action()
+        } label: {
+            Text(title.uppercased())
+                .tracking(1.2)
+                .font(.label(14))
                 .foregroundStyle(Color.ink)
-                .frame(maxWidth: .infinity, minHeight: 56)
-                .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .background(Color.butter, in: Leaf.button())
         }
+        .buttonStyle(PressDownStyle())
+        .sensoryFeedback(.impact(weight: .light), trigger: taps)
     }
 }
 
 struct BrandHeader: View {
+    /// Food stickers orbiting the chef: emoji, color, angle in degrees.
+    private let stickers: [(String, Color, Double)] = [
+        ("🍜", .butter, 200), ("🐟", .sky, 245), ("🥦", .mint, 295), ("🍰", .blush, 340), ("🌮", .peach, 20),
+        ("🍳", .lilac, 160),
+    ]
+
     var body: some View {
         VStack(spacing: 6) {
-            ChefCharacter(size: 150)
-            Text("Supper Club")
-                .font(.display(30))
+            ZStack {
+                ChefBubble(diameter: 156)
+                TimelineView(.animation) { timeline in
+                    let time = timeline.date.timeIntervalSinceReferenceDate
+                    ZStack {
+                        ForEach(Array(stickers.enumerated()), id: \.offset) { index, sticker in
+                            let angle = (sticker.2 + sin(time * 0.8 + Double(index)) * 4) * .pi / 180
+                            GlyphBubble(emoji: sticker.0, diameter: 42, fill: sticker.1)
+                                .rotationEffect(.degrees(sin(time * 1.4 + Double(index)) * 8))
+                                .offset(x: cos(angle) * 118, y: sin(angle) * 92)
+                        }
+                    }
+                }
+                .accessibilityHidden(true)
+            }
+            .frame(height: 180)
+            SupperClubLogo(size: 54)
+                .padding(.top, 6)
+            Text("Trade Recipes With The World")
+                .font(.label(15))
                 .foregroundStyle(Color.ink)
-            Text("join the global recipe exchange")
-                .font(.text(13))
-                .foregroundStyle(Color.gray4)
         }
         .frame(maxWidth: .infinity)
+        .background(alignment: .topLeading) {
+            // Scattered stickers like the references' illustration sheets.
+            ZStack {
+                Burst().fill(Color.sunflower).frame(width: 34, height: 34).offset(x: 22, y: 8)
+                Flower().fill(Color.blush).frame(width: 26, height: 26).offset(x: 330, y: 150)
+                Sparkle().fill(Color.sage).frame(width: 18, height: 18).offset(x: 60, y: 168)
+                Burst(points: 8, depth: 0.5).fill(Color.sky).frame(width: 24, height: 24).offset(x: 344, y: 12)
+            }
+            .accessibilityHidden(true)
+        }
     }
 }
 
@@ -73,7 +126,7 @@ struct LabeledField<Accessory: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(label)
-                    .font(.display(13))
+                    .font(.label(13))
                     .foregroundStyle(Color.ink)
                 Spacer()
                 accessory()
@@ -90,9 +143,9 @@ struct LabeledField<Accessory: View>: View {
             .autocorrectionDisabled()
             .font(.text(14))
             .padding(.horizontal, 20)
-            .frame(height: 50)
-            .background(Color.white, in: .capsule)
-            .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+            .frame(height: 52)
+            .background(Color.white, in: Leaf.button(18))
+            .overlay { Leaf.button(18).strokeBorder(Color.gray2, lineWidth: 1.5) }
         }
     }
 }
@@ -113,17 +166,17 @@ extension LabeledField where Accessory == EmptyView {
 
 struct InkProgressBar: View {
     let value: Double
+    var fill: Color = .tomato
 
     var body: some View {
         GeometryReader { proxy in
             Capsule()
-                .fill(Color.ink)
+                .fill(fill)
                 .frame(width: proxy.size.width * min(1, max(0, value)))
         }
         .frame(height: 12)
-        .background(Color.white, in: .capsule)
+        .background(Color.blush, in: .capsule)
         .clipShape(.capsule)
-        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
     }
 }
 
@@ -139,7 +192,7 @@ struct StepHeader: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.ink)
                     .frame(width: 44, height: 44)
-                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.ink, lineWidth: 2) }
+                    .background(Color.butter, in: Leaf.button(16))
             }
             .accessibilityLabel("Back")
             InkProgressBar(value: Double(step) / Double(total))
@@ -158,8 +211,9 @@ struct StepTitle: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.display(25))
+                .font(.display(24))
                 .foregroundStyle(Color.ink)
+                .fixedSize(horizontal: false, vertical: true)
             Text(subtitle)
                 .font(.text(14))
                 .foregroundStyle(Color.gray4)
@@ -179,7 +233,7 @@ struct OptionRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                InkGlyphView(emoji: emoji, size: 42)
+                GlyphBubble(emoji: emoji, diameter: 48)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.display(15))
@@ -192,21 +246,17 @@ struct OptionRow: View {
                 }
                 Spacer()
                 ZStack {
-                    Circle().stroke(Color.ink, lineWidth: 2)
+                    Circle().fill(isSelected ? Color.sage : Color.gray1)
                     if isSelected {
-                        Circle().fill(Color.ink)
                         Sparkle().fill(.white).frame(width: 13, height: 13)
                     }
                 }
-                .frame(width: 24, height: 24)
+                .frame(width: 26, height: 26)
             }
             .padding(12)
-            .background(isSelected ? Color.gray1 : .white, in: .rect(cornerRadius: 20))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(isSelected ? Color.ink : Color.gray2, lineWidth: isSelected ? 2.5 : 2)
-            }
+            .background(isSelected ? Color.butter : .white, in: Leaf.button(26))
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .sensoryFeedback(.selection, trigger: isSelected)
     }
 }

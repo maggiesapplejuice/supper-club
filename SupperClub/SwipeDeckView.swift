@@ -66,7 +66,7 @@ struct SwipeDeckView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.ink)
                     .frame(width: 44, height: 44)
-                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.ink, lineWidth: 2) }
+                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel("Back to the globe")
             Spacer()
@@ -215,7 +215,7 @@ struct SwipeDeckView: View {
                 .foregroundStyle(filled ? .white : Color.ink)
                 .frame(width: size, height: size)
                 .background(filled ? Color.ink : .white, in: .circle)
-                .overlay { Circle().stroke(Color.ink, lineWidth: 2.5) }
+                .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
         }
         .accessibilityLabel(label)
     }
@@ -224,7 +224,7 @@ struct SwipeDeckView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            InkGlyphView(emoji: "🥟", size: 90)
+            GlyphBubble(emoji: "🥟", diameter: 100)
             Text("That's every dish here")
                 .font(.display(20))
             Text("Head back to the globe to explore another city.")
@@ -278,7 +278,7 @@ private struct SwipeCard: View {
             let cardWidth = min(300, (proxy.size.height - 60) / 1.4)
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
-                    InkGlyphView(emoji: "👩‍🍳", size: 32)
+                    GlyphBubble(emoji: "👩‍🍳", diameter: 36, fill: .blush)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(recipe.owner.name)
                             .font(.display(14))

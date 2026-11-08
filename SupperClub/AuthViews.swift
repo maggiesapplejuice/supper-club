@@ -118,7 +118,7 @@ private struct SocialButton: View {
                 .font(.text(13))
                 .foregroundStyle(Color.brandText)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+                .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
         }
     }
 }

@@ -1,33 +1,5 @@
 import SwiftUI
 
-// Free photos from TheMealDB, matched by hand. Only dishes it has (or a near-identical version of)
-// are listed, so a card never shows the wrong food. The rest show a placeholder until we have photos.
-private let dishPhotos: [String: String] = [
-    "Massaman Curry": "tvttqv1504640475",
-    "Hyderabadi Dum Biryani": "xrttsx1487339558",
-    "Edomae Nigiri": "g046bb1663960946",
-    "Chicken Katsu Curry": "vwrpps1503068729",
-    "Ratatouille": "wrpwuu1511786491",
-    "Coq au Vin": "qstyvs1505931190",
-    "Moussaka": "ctg8jd1585563097",
-    "Osso Buco": "wwuqvt1487345467",
-    "Pad Thai": "rg9ze01763479093",
-    "Phở Bò": "pbzcrx1763765096",
-    "Bánh Xèo": "xrv78g1782769859",
-    "Mapo Tofu": "1525874812",
-    "Dal Tadka": "wuxrtu1483564410",
-    "Tonkotsu Ramen": "ip5xtp1769779958",
-    "Bouillabaisse de Marseille": "vptqpw1511798500",
-    "Bánh Mì": "sonirb1763782831",
-    "Khao Soi": "118oj61763423896",
-]
-
-extension Recipe {
-    var photoURL: URL? {
-        dishPhotos[name].flatMap { URL(string: "https://www.themealdb.com/images/media/meals/\($0).jpg") }
-    }
-}
-
 /// A full-width photo of the finished dish, shown under the card on Inspect.
 struct DishPhotoView: View {
     let recipe: Recipe
@@ -52,7 +24,7 @@ struct DishPhotoView: View {
                 }
             }
             .clipShape(.rect(cornerRadius: 24))
-            .overlay { RoundedRectangle(cornerRadius: 24).stroke(Color.ink, lineWidth: 2.5) }
+            .overlay { RoundedRectangle(cornerRadius: 24).stroke(Color.gray2, lineWidth: 1.5) }
             .overlay(alignment: .bottomLeading) {
                 if recipe.photoURL != nil {
                     Text("photo · TheMealDB")
@@ -70,7 +42,7 @@ struct DishPhotoView: View {
 
     private func placeholder(note: String) -> some View {
         VStack(spacing: 12) {
-            InkGlyphView(emoji: recipe.emoji, size: 120)
+            GlyphBubble(emoji: recipe.emoji, diameter: 140)
             Text(note)
                 .font(.text(13))
                 .foregroundStyle(Color.gray4)

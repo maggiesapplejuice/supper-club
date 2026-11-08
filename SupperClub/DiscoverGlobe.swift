@@ -23,9 +23,9 @@ struct DiscoverGlobe: View {
     /// Annotations added before the map has settled are never drawn, so they wait for this.
     @State private var isMapReady = false
 
-    /// Starts over the cook when they shared their location, otherwise over Asia where most dishes are.
+    /// Starts over the cook when they shared their location, otherwise over Europe and Africa, between the Americas and Asia.
     private static var startCenter: CLLocationCoordinate2D {
-        CLLocationManager().location?.coordinate ?? CLLocationCoordinate2D(latitude: 25, longitude: 90)
+        CLLocationManager().location?.coordinate ?? CLLocationCoordinate2D(latitude: 30, longitude: 10)
     }
 
     private var groups: [(city: DishCity, recipes: [Recipe])] {
@@ -81,7 +81,7 @@ struct DiscoverGlobe: View {
             if selectedRecipes.isEmpty { selectedCity = nil }
         }
         .clipShape(.rect(cornerRadius: 28))
-        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.ink, lineWidth: 2.5) }
+        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.gray2, lineWidth: 1.5) }
         // Leaves the Maps logo and legal link at the bottom corner visible.
         .overlay(alignment: .bottom) {
             Group {
@@ -134,7 +134,7 @@ struct DiscoverGlobe: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
                         .frame(width: 34, height: 34)
-                        .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                        .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
                 }
                 .accessibilityLabel("Close \(city.name)")
             }
@@ -168,7 +168,7 @@ struct DiscoverGlobe: View {
         }
         .padding(14)
         .background(Color.paper, in: .rect(cornerRadius: 22))
-        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.ink, lineWidth: 2.5) }
+        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.gray2, lineWidth: 1.5) }
     }
 
     // MARK: Camera
@@ -204,10 +204,7 @@ private struct CityPin: View {
         VStack(spacing: 3) {
             // From far away the icons shrink so neighboring cities don't pile up.
             let size: CGFloat = isSelected ? 50 : (showsName ? 40 : 20)
-            InkGlyphView(emoji: emoji, size: size * 0.78)
-                .frame(width: size, height: size)
-                .background(.white, in: .circle)
-                .overlay { Circle().stroke(Color.ink, lineWidth: isSelected ? 3 : 2) }
+            GlyphBubble(emoji: emoji, diameter: size, fill: isSelected ? .highlight : nil, lineWidth: isSelected ? 3 : 2)
                 .overlay(alignment: .topTrailing) {
                     if showsName {
                         Text("\(count)")

@@ -25,6 +25,11 @@ final class PackHaptics {
         ])
     }
 
+    /// A quick double tick as a card is flicked away.
+    func cardFlick() {
+        play([transient(at: 0, intensity: 0.5, sharpness: 0.9), transient(at: 0.05, intensity: 0.3, sharpness: 0.9)])
+    }
+
     /// Stronger and longer for rarer cards.
     func cardReveal(_ tier: RarityTier) {
         let strength = 0.4 + 0.15 * Double(tier.rawValue)

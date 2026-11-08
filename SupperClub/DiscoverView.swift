@@ -127,7 +127,7 @@ struct DiscoverView: View {
             }
         }
         .padding(4)
-        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
         .padding(.horizontal, 20)
     }
 
@@ -180,7 +180,7 @@ private struct TradingListView: View {
             VStack(alignment: .leading, spacing: 14) {
                 if model.interested.isEmpty && model.trades.isEmpty {
                     VStack(spacing: 10) {
-                        InkGlyphView(emoji: "🥟", size: 90)
+                        GlyphBubble(emoji: "🥟", diameter: 100)
                         Text("No trades yet")
                             .font(.display(20))
                         Text("Swipe right on a dish in Discover and it shows up here.")
@@ -251,7 +251,7 @@ private struct InterestedRow: View {
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(Color.ink)
                             .frame(width: 36, height: 36)
-                            .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                            .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
                     }
                     .accessibilityLabel("Remove \(recipe.name)")
                 }
@@ -260,7 +260,7 @@ private struct InterestedRow: View {
             Spacer(minLength: 0)
         }
         .padding(12)
-        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.ink, lineWidth: 2) }
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.gray2, lineWidth: 1.5) }
     }
 }
 
@@ -295,6 +295,6 @@ private struct TradeRow: View {
             SecondaryButton(title: "Cancel trade", action: onCancel)
         }
         .padding(14)
-        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.ink, lineWidth: 2) }
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.gray2, lineWidth: 1.5) }
     }
 }

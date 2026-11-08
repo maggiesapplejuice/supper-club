@@ -24,7 +24,7 @@ struct RarityDetailView: View {
                 .foregroundStyle(Color.brandText)
                 .frame(width: 44, height: 44)
                 .background(.white, in: .circle)
-                .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
                 .padding(16)
         }
     }

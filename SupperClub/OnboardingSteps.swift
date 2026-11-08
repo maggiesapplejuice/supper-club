@@ -109,24 +109,31 @@ struct LocationStepView: View {
     var body: some View {
         VStack(spacing: 0) {
             StepHeader(step: 5, total: totalSteps, onBack: model.goBack)
-                .padding(.bottom, 20)
-            LocalMapIllustration()
-            Text("Share your location to discover local recipes")
-                .font(.display(20))
-                .foregroundStyle(Color.brandText)
-                .multilineTextAlignment(.center)
-                .padding(.top, 28)
-            Text("See what home cooks near you are making and swap recipes with your neighbors. You can change this anytime in Settings.")
-                .font(.text(14))
-                .foregroundStyle(Color.gray4)
-                .multilineTextAlignment(.center)
-                .padding(.top, 10)
+                .padding(.bottom, 24)
+            NearbyIllustration()
+            VStack(spacing: 10) {
+                Text("Find cooks near you")
+                    .font(.display(28))
+                    .foregroundStyle(Color.ink)
+                Text("Share your location and we'll show recipes from home cooks in your area first. You can change this anytime in Settings.")
+                    .font(.text(15))
+                    .foregroundStyle(Color.gray4)
+            }
+            .multilineTextAlignment(.center)
+            .padding(.top, 28)
             Spacer()
             VStack(spacing: 12) {
-                PrimaryButton(title: "Share My Location", systemImage: "mappin.circle") {
+                PrimaryButton(title: "Share my location", systemImage: "location.fill") {
                     permission.request(completion: model.finish)
                 }
-                SecondaryButton(title: "Not Now", action: model.finish)
+                SecondaryButton(title: "Skip for now", action: model.finish)
+                HStack(spacing: 6) {
+                    Sparkle().fill(Color.sunflower).frame(width: 12, height: 12)
+                    Text("Next up: open your free starter pack")
+                        .font(.label(13))
+                        .foregroundStyle(Color.ink)
+                }
+                .padding(.top, 4)
             }
             .padding(.vertical, 12)
         }
@@ -134,63 +141,24 @@ struct LocationStepView: View {
     }
 }
 
-private struct LocalMapIllustration: View {
+/// A pin among nearby dishes, in the references' sticker style.
+private struct NearbyIllustration: View {
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Canvas { context, size in
-                let spacing: CGFloat = 24
-                for x in stride(from: spacing, to: size.width, by: spacing) {
-                    let line = Path { $0.addLines([CGPoint(x: x, y: 0), CGPoint(x: x, y: size.height)]) }
-                    context.stroke(line, with: .color(Color.brandPrimary.opacity(0.12)), lineWidth: 2)
-                }
-                for y in stride(from: spacing, to: size.height, by: spacing) {
-                    let line = Path { $0.addLines([CGPoint(x: 0, y: y), CGPoint(x: size.width, y: y)]) }
-                    context.stroke(line, with: .color(Color.brandPrimary.opacity(0.12)), lineWidth: 2)
-                }
-            }
-            .background(Color.white)
-            HStack(alignment: .top, spacing: 8) {
-                NearbyCard(emoji: "🍝", name: "Pasta al Limone", distance: "0.3 mi")
-                NearbyCard(emoji: "🌮", name: "Chicken Fajitas", distance: "0.5 mi")
-                NearbyCard(emoji: "🍣", name: "Sushi Platter", distance: "0.7 mi")
-            }
-            .padding(12)
-            .frame(maxHeight: .infinity, alignment: .top)
-            Label("YOU ARE HERE", systemImage: "mappin.circle")
-                .font(.display(12))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .background(Color.ink, in: .capsule)
-                .padding(.bottom, 16)
+        ZStack {
+            Leaf.frame().fill(Color.sky.opacity(0.55))
+            Circle().fill(Color.butter).frame(width: 150, height: 150)
+            Image(systemName: "mappin")
+                .font(.system(size: 64, weight: .bold))
+                .foregroundStyle(Color.rose)
+            GlyphBubble(emoji: "🍝", diameter: 54, fill: .blush).offset(x: -110, y: -50)
+            GlyphBubble(emoji: "🌮", diameter: 48, fill: .mint).offset(x: 118, y: -36)
+            GlyphBubble(emoji: "🍣", diameter: 46, fill: .lilac).offset(x: 90, y: 72)
+            Flower().fill(Color.blush).frame(width: 28, height: 28).offset(x: -120, y: 70)
+            Burst().fill(Color.sunflower).frame(width: 30, height: 30).offset(x: 130, y: -88)
+            Sparkle().fill(Color.ink).frame(width: 16, height: 16).offset(x: -60, y: -92)
         }
-        .frame(height: 240)
-        .clipShape(.rect(cornerRadius: 24))
-        .overlay { RoundedRectangle(cornerRadius: 24).stroke(Color.ink, lineWidth: 2.5) }
+        .frame(height: 250)
         .accessibilityHidden(true)
-    }
-}
-
-private struct NearbyCard: View {
-    let emoji: String
-    let name: String
-    let distance: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            InkGlyphView(emoji: emoji, size: 48)
-                .frame(maxWidth: .infinity, minHeight: 52)
-            Text(name)
-                .font(.display(11))
-                .foregroundStyle(Color.brandText)
-                .lineLimit(2, reservesSpace: true)
-            Label(distance, systemImage: "mappin")
-                .font(.text(10))
-                .foregroundStyle(Color.brandPrimary)
-        }
-        .padding(6)
-        .background(.white, in: .rect(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.ink, lineWidth: 2) }
     }
 }
 

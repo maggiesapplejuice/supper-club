@@ -27,6 +27,10 @@ struct PackOpeningView: View {
     @State private var isBuildingUp = false
     @State private var isFlipping = false
     @State private var detailRecipe: Recipe?
+    @State private var cardsLanded = false
+    @State private var tapSpin = 0.0
+    @State private var tapPop: CGFloat = 1
+    @State private var tapBursts = 0
 
     @State private var sparks: [Spark] = []
     @State private var haptics = PackHaptics()
@@ -36,9 +40,14 @@ struct PackOpeningView: View {
 
     var body: some View {
         ZStack {
-            (isDark ? Color.black : Color.paper)
+            Color.black
                 .ignoresSafeArea()
-                .animation(.easeInOut(duration: 0.4), value: isDark)
+            // Rays only behind the sealed pack; cards are revealed on pure black.
+            LightRays(color: glowColor, speed: 0.08)
+                .opacity(stage == .sealed || stage == .bursting ? 0.9 : 0)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .animation(.easeInOut(duration: 0.5), value: glowColor)
             switch stage {
             case .sealed, .bursting: packStage
             case .reveal: revealStage
@@ -47,12 +56,13 @@ struct PackOpeningView: View {
             SparkLayer(sparks: sparks)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-            (isDark ? Color.white : Color.ink)
+            Color.white
                 .opacity(flash)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
         .onAppear { haptics.prepare() }
+        .sensoryFeedback(.success, trigger: stage == .summary)
         .sheet(item: $detailRecipe) { recipe in
             RarityDetailView(recipe: recipe)
         }
@@ -60,9 +70,15 @@ struct PackOpeningView: View {
 
     // MARK: Background
 
-    /// The screen inverts to black only for the Legendary, so the foil is the one burst of color.
-    private var isDark: Bool { stage == .reveal && current.tier.isHolographic }
-    private var foreground: Color { isDark ? .white : .ink }
+    /// The whole opening happens on black, lit by the color of whatever is on screen.
+    private var foreground: Color { .white }
+    private var glowColor: Color {
+        switch stage {
+        case .sealed, .bursting: .mango
+        case .reveal: isFaceUp ? (current.tier == .common ? .sunflower : current.tier.accent) : .butter
+        case .summary: .bubblegum
+        }
+    }
     /// Lower tiers arrive smaller, so a rarer card feels bigger the moment it lands.
     private var revealScale: CGFloat { 0.84 + 0.04 * CGFloat(current.tier.rawValue) }
 
@@ -72,10 +88,13 @@ struct PackOpeningView: View {
         VStack(spacing: 28) {
             VStack(spacing: 10) {
                 Text("Your starter pack")
-                    .font(.display(26))
+                    .font(.display(30))
+                Text("\(recipes.count) recipe cards inside")
+                    .font(.text(14))
+                    .foregroundStyle(.white.opacity(0.7))
                 dietBadge
             }
-            .foregroundStyle(Color.ink)
+            .foregroundStyle(.white)
             .opacity(stage == .sealed ? 1 : 0)
             ZStack {
                 deckInsidePack
@@ -85,9 +104,10 @@ struct PackOpeningView: View {
             }
             .frame(width: packSize.width, height: packSize.height)
             Label("Swipe across the top to tear it open", systemImage: "hand.draw")
-                .font(.text(14))
-                .foregroundStyle(Color.gray4)
+                .font(.display(14))
+                .foregroundStyle(Color.lemon)
                 .opacity(stage == .sealed && tear == 0 ? 1 : 0)
+                .phaseAnimator([0.45, 1]) { label, opacity in label.opacity(opacity) } animation: { _ in .easeInOut(duration: 0.9) }
         }
     }
 
@@ -103,6 +123,9 @@ struct PackOpeningView: View {
             let time = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
             let foil = PackFoil(size: packSize, time: time, cardCount: recipes.count)
             let width = packSize.width
+            // The sealed pack floats and breathes so it begs to be opened.
+            let bob = stage == .sealed && tear == 0 ? sin(time * 2) * 6 : 0
+            let sway = stage == .sealed && tear == 0 ? sin(time * 1.3) * 1.5 : 0
 
             ZStack(alignment: .topLeading) {
                 foil.mask(alignment: .topLeading) {
@@ -126,13 +149,17 @@ struct PackOpeningView: View {
                 .rotationEffect(.degrees(stripGone ? -60 : 0))
                 .opacity(stripGone ? 0 : 1)
 
-                // The black slit opening along the tear.
+                // The glowing slit opening along the tear.
                 Capsule()
-                    .fill(Color.ink)
-                    .frame(width: width * tear, height: 5)
-                    .offset(y: stripHeight - 2)
+                    .fill(Color.lemon)
+                    .frame(width: width * tear, height: 6)
+                    .shadow(color: .lemon, radius: 10)
+                    .offset(y: stripHeight - 3)
             }
             .frame(width: width, height: packSize.height, alignment: .topLeading)
+            .shadow(color: Color.mango.opacity(0.55 + 0.25 * sin(time * 3)), radius: 34)
+            .offset(y: bob)
+            .rotationEffect(.degrees(sway))
         }
         .scaleEffect(1 + tear * 0.03)
         .contentShape(.rect)
@@ -155,6 +182,7 @@ struct PackOpeningView: View {
                     lastTick = tear
                     haptics.tearTick(progress: tear)
                     spawnTearSparks()
+                    if tear > 0.6 && !reduceMotion { flash = 0.08 * tear }
                 }
                 if tear >= 1 { burstOpen() }
             }
@@ -166,7 +194,10 @@ struct PackOpeningView: View {
         stage = .bursting
         tear = 1
         haptics.packBurst()
-        spawnBurst(color: .ink, count: 70)
+        for color in Color.accents {
+            spawnBurst(color: color, count: 14)
+        }
+        spawnBurst(color: .white, count: 30)
         if !reduceMotion { flash = 0.85 }
         withAnimation(.easeOut(duration: 0.45)) {
             flash = 0
@@ -186,9 +217,15 @@ struct PackOpeningView: View {
 
     private var revealStage: some View {
         VStack(spacing: 20) {
-            Text("\(index + 1) of \(recipes.count)")
-                .font(.text(14))
-                .foregroundStyle(foreground)
+            HStack(spacing: 6) {
+                ForEach(recipes.indices, id: \.self) { position in
+                    Capsule()
+                        .fill(position <= index ? Color.lemon : .white.opacity(0.25))
+                        .frame(width: position == index ? 22 : 8, height: 8)
+                }
+            }
+            .animation(.spring(duration: 0.35, bounce: 0.4), value: index)
+            .accessibilityLabel("Card \(index + 1) of \(recipes.count)")
             ZStack {
                 if index + 1 < recipes.count {
                     CardBackView(width: cardWidth)
@@ -216,13 +253,15 @@ struct PackOpeningView: View {
                         extraTilt: CGPoint(x: dragX / 180, y: 0)
                     )
                     .scaleEffect(revealScale)
-                    .shadow(color: .white.opacity(current.tier.isHolographic ? 0.5 : 0), radius: 26)
+                    .shadow(color: glowColor.opacity(0.35 + 0.12 * Double(current.tier.rawValue)), radius: 18 + 8 * CGFloat(current.tier.rawValue))
                 } else {
                     CardBackView(width: cardWidth)
-                        .shadow(color: .white.opacity(0.8), radius: isBuildingUp ? 44 : 20)
+                        .shadow(color: Color.lemon.opacity(0.9), radius: isBuildingUp ? 60 : 24)
                 }
             }
-            .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+            .rotation3DEffect(.degrees(flipAngle + tapSpin), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+            .scaleEffect(tapPop)
+            .background { ShockRings(trigger: tapBursts, color: glowColor) }
             .rotationEffect(.degrees(Double(dragX) / 18 + shake * 0.3))
             .offset(x: dragX + shake)
         }
@@ -230,7 +269,7 @@ struct PackOpeningView: View {
         .gesture(swipeGesture)
         .onTapGesture {
             if isFaceUp {
-                detailRecipe = current
+                celebrateTap()
             } else {
                 flipHoloCard()
             }
@@ -248,8 +287,11 @@ struct PackOpeningView: View {
         VStack(spacing: 6) {
             if isFaceUp {
                 Text(current.tier.name)
-                    .font(current.tier == .common ? .text(18) : .display(18 + 6 * CGFloat(current.tier.rawValue)))
-                    .foregroundStyle(current.tier == .common ? Color.gray4 : foreground)
+                    .font(current.tier == .common ? .display(20) : .display(22 + 6 * CGFloat(current.tier.rawValue)))
+                    .foregroundStyle(current.tier == .common ? Color.white.opacity(0.8) : (current.tier == .legendary ? .white : current.tier.accent))
+                    .shadow(color: glowColor.opacity(0.6), radius: 12)
+                    .id(index)
+                    .transition(.scale(scale: 1.6).combined(with: .opacity))
                 Text(index + 1 < recipes.count
                     ? "Swipe for the next card · Tap to see its rarity"
                     : "Swipe to finish · Tap to see its rarity")
@@ -284,12 +326,13 @@ struct PackOpeningView: View {
     }
 
     private func showNext(direction: CGFloat = 1) {
+        haptics.cardFlick()
         withAnimation(.easeIn(duration: 0.2)) { dragX = direction * 520 }
         Task {
             try? await Task.sleep(for: .seconds(0.2))
             if index + 1 < recipes.count {
                 dragX = 0
-                index += 1
+                withAnimation(.spring(duration: 0.45, bounce: 0.5)) { index += 1 }
                 arrive(at: index)
             } else {
                 withAnimation(.easeOut(duration: 0.3)) { stage = .summary }
@@ -305,9 +348,32 @@ struct PackOpeningView: View {
         } else {
             isFaceUp = true
             haptics.cardReveal(recipe.tier)
+            // Every card gets confetti in its own color; rarer cards get more.
+            spawnBurst(color: recipe.tier == .common ? .sunflower : recipe.tier.accent, count: 10 + 14 * recipe.tier.rawValue)
             if recipe.tier >= .rare {
-                spawnBurst(color: recipe.tier.color, count: 12 * recipe.tier.rawValue)
+                spawnBurst(color: .lemon, count: 8 * recipe.tier.rawValue)
             }
+        }
+    }
+
+    /// Tapping a revealed card spins it, sends out color rings and confetti, then opens its rarity details.
+    private func celebrateTap() {
+        guard !isFlipping else { return }
+        isFlipping = true
+        haptics.cardReveal(current.tier)
+        tapBursts += 1
+        let colors = current.tier == .common ? [Color.sunflower, .blush, .mint] : [current.tier.accent, .butter, .rose, .sky]
+        for color in colors {
+            spawnBurst(color: color, count: 18)
+        }
+        withAnimation(.spring(duration: 0.55, bounce: 0.35)) { tapSpin += 360 }
+        withAnimation(.spring(duration: 0.25, bounce: 0.6)) { tapPop = 1.12 }
+        Task {
+            try? await Task.sleep(for: .seconds(0.25))
+            withAnimation(.spring(duration: 0.35, bounce: 0.5)) { tapPop = 1 }
+            try? await Task.sleep(for: .seconds(0.35))
+            isFlipping = false
+            detailRecipe = current
         }
     }
 
@@ -346,23 +412,24 @@ struct PackOpeningView: View {
         if !filters.isEmpty {
             VStack(spacing: 4) {
                 HStack(spacing: 6) {
-                    Sparkle().fill(.white).frame(width: 11, height: 11)
+                    Sparkle().fill(Color.ink).frame(width: 11, height: 11)
                     Text("Every card fits your diet")
                         .font(.display(12))
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.ink)
                 .padding(.horizontal, 12)
                 .frame(height: 28)
-                .background(Color.ink, in: .capsule)
+                .background(Color.matcha, in: .capsule)
+                .overlay { Capsule().stroke(.white, lineWidth: 1.5) }
                 Text(filters.joined(separator: " · "))
                     .font(.text(12))
-                    .foregroundStyle(Color.gray4)
+                    .foregroundStyle(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                 if recipes.count < StarterPack.size {
-                    Text("Only \(recipes.count) of our recipes fit right now, so your pack is smaller.")
+                    Text("Only \(recipes.count) of our recipes fit all of these, so your pack is smaller.")
                         .font(.text(12))
-                        .foregroundStyle(Color.gray4)
+                        .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
             }
@@ -377,27 +444,31 @@ struct PackOpeningView: View {
         VStack(spacing: 18) {
             VStack(spacing: 4) {
                 Text("Your starter pack")
-                    .font(.display(26))
-                    .foregroundStyle(Color.ink)
+                    .font(.display(28))
+                    .foregroundStyle(.white)
                 Text("Tap a card to see what makes it rare")
                     .font(.text(14))
                     .foregroundStyle(foreground.opacity(0.7))
                 dietBadge
                     .padding(.top, 6)
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 12) {
-                ForEach(recipes.reversed()) { recipe in
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 12) {
+                ForEach(Array(recipes.reversed().enumerated()), id: \.element.id) { position, recipe in
                     Button { detailRecipe = recipe } label: {
-                        LiveCardView(recipe: recipe, width: 110)
+                        LiveCardView(recipe: recipe, width: 82)
                     }
+                    .scaleEffect(cardsLanded ? 1 : 0.4)
+                    .opacity(cardsLanded ? 1 : 0)
+                    .animation(.spring(duration: 0.5, bounce: 0.5).delay(Double(position) * 0.06), value: cardsLanded)
                     .buttonStyle(.plain)
                     .accessibilityHint("Shows rarity details")
                 }
             }
             Spacer()
-            PrimaryButton(title: "ADD TO MY COLLECTION", action: onFinish)
+            PrimaryButton(title: "Add to my collection", action: onFinish)
         }
         .padding(20)
+        .onAppear { cardsLanded = true }
     }
 
     // MARK: Sparks
@@ -405,11 +476,11 @@ struct PackOpeningView: View {
     private func spawnTearSparks() {
         guard !reduceMotion else { return }
         let center = CGPoint(x: packCenterX + packSize.width * (tear - 0.5), y: packTearY)
-        addSparks((0..<6).map { _ in
+        addSparks((0..<8).map { _ in
             Spark(
                 origin: center,
                 velocity: CGVector(dx: .random(in: -70...110), dy: .random(in: -180 ... -30)),
-                color: .ink,
+                color: [Color.lemon, .mango, .tomato, .white].randomElement()!,
                 size: .random(in: 3...6),
                 life: .random(in: 0.3...0.6)
             )
@@ -452,22 +523,34 @@ private struct PackFoil: View {
     var body: some View {
         let shift = sin(time * 0.8) * 0.35
         ZStack {
-            Color.white
+            // Holographic foil that slowly shifts, with a moving glare across it.
             LinearGradient(
-                colors: [.clear, .black.opacity(0.1), .clear, .black.opacity(0.05), .clear],
-                startPoint: UnitPoint(x: -0.5 + shift, y: 0),
-                endPoint: UnitPoint(x: 1.5 + shift, y: 1)
+                colors: HolographicFoil.spectrum + HolographicFoil.spectrum,
+                startPoint: UnitPoint(x: -0.6 + shift, y: -0.4),
+                endPoint: UnitPoint(x: 1.6 + shift, y: 1.4)
             )
-            VStack(spacing: 6) {
-                ChefCharacter(size: 170)
+            .opacity(0.85)
+            LinearGradient(
+                colors: [.clear, .white.opacity(0.55), .clear],
+                startPoint: UnitPoint(x: -0.4 + shift * 2, y: 0),
+                endPoint: UnitPoint(x: 0.4 + shift * 2, y: 1)
+            )
+            .blendMode(.plusLighter)
+            VStack(spacing: 8) {
+                ChefBubble(diameter: 160)
                 Text("Supper Club")
                     .font(.display(30))
-                Text("starter pack")
-                    .font(.text(15))
-                Text("\(cardCount) recipe cards")
-                    .font(.text(12))
-                    .foregroundStyle(Color.gray4)
-                    .padding(.top, 8)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 4)
+                    .background(.white, in: .capsule)
+                    .overlay { Capsule().stroke(Color.ink, lineWidth: 2.5) }
+                Text("STARTER PACK · \(cardCount) CARDS")
+                    .font(.display(12))
+                    .tracking(1.2)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .frame(height: 26)
+                    .background(Color.ink, in: .capsule)
             }
             .foregroundStyle(Color.ink)
             VStack {
@@ -483,12 +566,75 @@ private struct PackFoil: View {
     }
 }
 
+/// Three color rings that ripple out from the card when it's tapped.
+private struct ShockRings: View {
+    let trigger: Int
+    let color: Color
+
+    @State private var expand = false
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .stroke([color, Color.butter, Color.rose][index], lineWidth: 6)
+                    .frame(width: 240, height: 240)
+                    .scaleEffect(expand ? 2.2 + 0.4 * CGFloat(index) : 0.6)
+                    .opacity(expand ? 0 : 0.9)
+                    .animation(.easeOut(duration: 0.7).delay(0.08 * Double(index)), value: expand)
+            }
+        }
+        .allowsHitTesting(false)
+        .onChange(of: trigger) {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { expand = false }
+            Task {
+                try? await Task.sleep(for: .milliseconds(20))
+                expand = true
+            }
+        }
+    }
+}
+
+/// Slowly turning sunburst behind the pack and cards, tinted by what's on screen.
+private struct LightRays: View {
+    let color: Color
+    let speed: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { timeline in
+            let angle = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate * speed
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height * 0.48)
+                let reach = hypot(size.width, size.height)
+                let rays = 18
+                for index in 0..<rays {
+                    let start = angle + Double(index) / Double(rays) * 2 * .pi
+                    let end = start + .pi / Double(rays)
+                    var ray = Path()
+                    ray.move(to: center)
+                    ray.addLine(to: CGPoint(x: center.x + cos(start) * reach, y: center.y + sin(start) * reach))
+                    ray.addLine(to: CGPoint(x: center.x + cos(end) * reach, y: center.y + sin(end) * reach))
+                    ray.closeSubpath()
+                    context.fill(ray, with: .radialGradient(
+                        Gradient(colors: [color.opacity(0.55), color.opacity(0)]),
+                        center: center, startRadius: 0, endRadius: reach * 0.55
+                    ))
+                }
+            }
+        }
+    }
+}
+
 private struct CrimpEdge: View {
     var body: some View {
         HStack(spacing: 3) {
             ForEach(0..<40, id: \.self) { _ in
                 Rectangle()
-                    .fill(Color.ink)
+                    .fill(Color.ink.opacity(0.85))
                     .frame(width: 3, height: 14)
             }
         }

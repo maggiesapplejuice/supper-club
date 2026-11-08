@@ -1,4 +1,5 @@
 import Observation
+import SwiftUI
 
 enum OnboardingRoute: Hashable {
     case signUp
@@ -8,7 +9,7 @@ enum OnboardingRoute: Hashable {
     case location
 }
 
-enum CookingExperience: String, CaseIterable, Identifiable {
+enum CookingExperience: String, CaseIterable, Identifiable, Decodable {
     case beginner = "Beginner"
     case intermediate = "Intermediate"
     case advanced = "Advanced"
@@ -42,19 +43,53 @@ struct OnboardingOption: Identifiable, Hashable {
     var id: String { name }
 }
 
-// Placeholder emoji stand in for the Figma cuisine photos until those are exported.
-let cuisineOptions = [
-    OnboardingOption(name: "Chinese", emoji: "🥟"),
-    OnboardingOption(name: "French", emoji: "🥐"),
-    OnboardingOption(name: "Greek", emoji: "🫒"),
-    OnboardingOption(name: "Indian", emoji: "🍛"),
-    OnboardingOption(name: "Italian", emoji: "🍝"),
-    OnboardingOption(name: "Japanese", emoji: "🍣"),
-    OnboardingOption(name: "Korean", emoji: "🍲"),
-    OnboardingOption(name: "Mexican", emoji: "🌮"),
-    OnboardingOption(name: "Thai", emoji: "🍜"),
-    OnboardingOption(name: "Vietnamese", emoji: "🥢"),
+/// Each cuisine's signature dish, drawn as one of the little ink guys.
+private let cuisineSignatures: [String: (emoji: String, dish: String)] = [
+    "Afghan": ("🍚", "kabuli pulao"), "Albanian": ("🥧", "byrek"), "Algerian": ("🍲", "chorba"),
+    "American": ("🍖", "burgers"), "Argentine": ("🔥", "asado"), "Aruban": ("🐟", "keshi yena"),
+    "Australian": ("🍮", "pavlova"), "Bahamian": ("🦐", "conch fritters"), "Barbadian": ("🐟", "flying fish"),
+    "Belgian": ("🥐", "waffles"), "Botswanan": ("🥩", "seswaa"), "Brazilian": ("🫘", "feijoada"),
+    "British": ("🥧", "pies"), "Bulgarian": ("🥗", "shopska salad"), "Cambodian": ("🐟", "fish amok"),
+    "Canadian": ("🥞", "pancakes"), "Chilean": ("🥟", "empanadas"), "Chinese": ("🥟", "dumplings"),
+    "Colombian": ("🌾", "arepas"), "Costa Rican": ("🫘", "gallo pinto"), "Croatian": ("🐟", "brudet"),
+    "Cuban": ("🥩", "ropa vieja"), "Danish": ("🥖", "smørrebrød"), "Dominican": ("🥬", "callaloo"),
+    "Dutch": ("🧀", "stroopwafels"), "Egyptian": ("🌰", "ful medames"), "Filipino": ("🍢", "adobo"),
+    "French": ("🥐", "croissants"), "Greek": ("🥗", "horiatiki"), "Indian": ("🍛", "curry"),
+    "Irish": ("🍲", "Irish stew"), "Italian": ("🍝", "pasta"), "Jamaican": ("🔥", "jerk chicken"),
+    "Japanese": ("🍣", "sushi"), "Kenyan": ("🍗", "nyama choma"), "Malaysian": ("🍜", "laksa"),
+    "Mexican": ("🌮", "tacos"), "Moroccan": ("🍲", "tagine"), "Norwegian": ("🐟", "salmon"),
+    "Polish": ("🥟", "pierogi"), "Portuguese": ("🐟", "bacalhau"), "Russian": ("🍲", "borscht"),
+    "Saudi Arabian": ("🍚", "kabsa"), "Spanish": ("🦐", "paella"), "Syrian": ("🥗", "fattoush"),
+    "Thai": ("🍜", "pad thai"), "Tunisian": ("🍳", "shakshuka"), "Turkish": ("🍖", "kebab"),
+    "Ukrainian": ("🥟", "varenyky"), "Uruguayan": ("🥩", "chivito"), "Venezuelan": ("🌾", "arepas"),
+    "Vietnamese": ("🍜", "phở"),
 ]
+
+/// Cuisines with enough recipes to build a starter pack from, alphabetically, each shown by its signature dish.
+let cuisineOptions: [OnboardingOption] = Dictionary(grouping: recipeCatalog, by: \.cuisine)
+    .filter { $0.value.count >= 5 }
+    .map { cuisine, _ in OnboardingOption(name: cuisine, emoji: cuisineSignatures[cuisine]?.emoji ?? "🍲") }
+    .sorted { $0.name < $1.name }
+
+/// The signature dish named under each cuisine's tile.
+func signatureDish(forCuisine cuisine: String) -> String? { cuisineSignatures[cuisine]?.dish }
+
+/// A bubble color per cuisine. Cuisines that share a glyph get different pastels, so no two tiles look alike.
+let cuisineBubbleColors: [String: Color] = {
+    let palette: [Color] = [.butter, .blush, .mint, .sky, .lilac, .peach]
+    var seen: [InkGlyph: Int] = [:]
+    var colors: [String: Color] = [:]
+    for option in cuisineOptions {
+        let glyph = InkGlyph(emoji: option.emoji)
+        let count = seen[glyph, default: 0]
+        colors[option.name] = palette[count % palette.count]
+        seen[glyph] = count + 1
+    }
+    return colors
+}()
+
+/// How many recipes each cuisine has, shown under its tile.
+let cuisineRecipeCounts: [String: Int] = Dictionary(grouping: recipeCatalog, by: \.cuisine).mapValues(\.count)
 
 struct RestrictionGroup: Identifiable {
     let title: String

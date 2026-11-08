@@ -51,7 +51,7 @@ struct RestrictionPicker: View {
             ForEach(restrictionGroups) { group in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
-                        InkGlyphView(emoji: group.emoji, size: 28)
+                        GlyphBubble(emoji: group.emoji, diameter: 32)
                         Text(group.title)
                             .font(.display(15))
                             .foregroundStyle(Color.ink)
@@ -80,7 +80,7 @@ struct RestrictionPicker: View {
                         .padding(.horizontal, 16)
                         .frame(height: 46)
                         .background(.white, in: .capsule)
-                        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+                        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
                     Button("Add", action: addCustom)
                         .font(.display(13))
                         .foregroundStyle(.white)
@@ -122,9 +122,17 @@ struct CuisinePicker: View {
     @Binding var selection: Set<String>
 
     var body: some View {
+        grid.sensoryFeedback(.selection, trigger: selection)
+    }
+
+    private var grid: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], spacing: 12) {
-            ForEach(cuisineOptions.sorted { $0.name < $1.name }) { cuisine in
-                CuisineTile(cuisine: cuisine, isSelected: selection.contains(cuisine.name)) {
+            ForEach(Array(cuisineOptions.sorted { $0.name < $1.name }.enumerated()), id: \.element.id) { index, cuisine in
+                CuisineTile(
+                    cuisine: cuisine,
+                    isSelected: selection.contains(cuisine.name),
+                    accent: .white
+                ) {
                     selection.formSymmetricDifference([cuisine.name])
                 }
             }
@@ -135,29 +143,36 @@ struct CuisinePicker: View {
 private struct CuisineTile: View {
     let cuisine: OnboardingOption
     let isSelected: Bool
+    let accent: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                InkGlyphView(emoji: cuisine.emoji, size: 84)
-                    .frame(maxWidth: .infinity, minHeight: 104)
+                GlyphBubble(emoji: cuisine.emoji, diameter: 82, fill: cuisineBubbleColors[cuisine.name])
+                    .frame(maxWidth: .infinity, minHeight: 92)
                 Text(cuisine.name)
-                    .font(.display(13))
-                    .foregroundStyle(Color.brandText)
+                    .font(.display(14))
+                    .foregroundStyle(Color.ink)
+                Text([signatureDish(forCuisine: cuisine.name), "\(cuisineRecipeCounts[cuisine.name, default: 0]) recipes"]
+                    .compactMap { $0 }.joined(separator: " · "))
+                    .font(.text(12))
+                    .foregroundStyle(Color.ink.opacity(0.6))
             }
             .padding(8)
-            .background(isSelected ? Color.gray1 : .white, in: .rect(cornerRadius: 20))
+            .padding(.vertical, 8)
+            .background(accent.opacity(isSelected ? 1 : 0.55), in: Leaf.swatch())
             .overlay {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(isSelected ? Color.ink : Color.gray2, lineWidth: isSelected ? 2.5 : 2)
+                Leaf.swatch().strokeBorder(Color.ink, lineWidth: isSelected ? 2.5 : 0)
             }
+            .scaleEffect(isSelected ? 1.03 : 1)
+            .animation(.spring(duration: 0.3, bounce: 0.5), value: isSelected)
             .overlay(alignment: .topTrailing) {
                 if isSelected {
                     Sparkle()
                         .fill(Color.ink)
-                        .frame(width: 24, height: 24)
-                        .padding(10)
+                        .frame(width: 22, height: 22)
+                        .padding(14)
                 }
             }
         }

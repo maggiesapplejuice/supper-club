@@ -64,7 +64,7 @@ struct OfferCardsView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.ink)
                     .frame(width: 44, height: 44)
-                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.ink, lineWidth: 2) }
+                    .overlay { RoundedRectangle(cornerRadius: 13).stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel("Back")
             Text("Select Cards to Offer")
@@ -190,7 +190,7 @@ struct OfferCardsView: View {
         }
         .padding(20)
         .background(Color.paper, in: .rect(cornerRadius: 28))
-        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.ink, lineWidth: 2.5) }
+        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.gray2, lineWidth: 1.5) }
         .padding(.horizontal, 16)
     }
 
@@ -226,7 +226,7 @@ struct OfferCardsView: View {
                 .foregroundStyle(Color.ink)
                 .padding(.horizontal, 10)
                 .frame(height: 22)
-                .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
+                .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
             content()
                 .frame(height: 170)
         }
@@ -242,7 +242,7 @@ struct OfferCardsView: View {
                 .padding(.horizontal, 7)
                 .frame(height: 20)
                 .background(card.tier >= .rare ? Color.ink : .white, in: .rect(cornerRadius: 5))
-                .overlay { RoundedRectangle(cornerRadius: 5).stroke(Color.ink, lineWidth: 1.5) }
+                .overlay { RoundedRectangle(cornerRadius: 5).stroke(Color.gray2, lineWidth: 1.5) }
             Text(card.name)
                 .font(.display(14))
                 .foregroundStyle(Color.ink)
@@ -276,7 +276,7 @@ struct OfferCardsView: View {
         .padding(28)
         .frame(maxWidth: .infinity)
         .background(Color.paper, in: .rect(cornerRadius: 28))
-        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.ink, lineWidth: 2.5) }
+        .overlay { RoundedRectangle(cornerRadius: 28).stroke(Color.gray2, lineWidth: 1.5) }
         .padding(.horizontal, 28)
         .accessibilityElement(children: .combine)
     }
@@ -307,7 +307,7 @@ private struct OfferTile: View {
                     .foregroundStyle(Color.ink)
                     .frame(width: 32, height: 32)
                     .background(.white, in: .circle)
-                    .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                    .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel("See rarity of \(card.name)")
             .offset(x: -10, y: 118)

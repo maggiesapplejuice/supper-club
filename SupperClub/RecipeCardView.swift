@@ -3,8 +3,8 @@ import SwiftUI
 
 /// The printed card. `tilt` runs from -1 to 1 on each axis and drives the holographic foil.
 /// Each tier steps up everything at once, so rarity reads at a glance:
-/// Common is flat and quiet, Uncommon gets a panel and outline, Rare adds halftone, a double frame and a hard shadow,
-/// Epic inverts to black with a sunburst, and Legendary is the only card in color.
+/// Common is oat and quiet, Uncommon gets a matcha panel, Rare adds blueberry halftone, a double frame and a
+/// colored shadow, Epic goes deep ube with a sunburst, and Legendary is holographic.
 struct RecipeCardView: View {
     let recipe: Recipe
     let width: CGFloat
@@ -20,7 +20,7 @@ struct RecipeCardView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 24 * unit)
-                .fill(isHolo ? Color(hex: 0x15131F) : (isDark ? Color.ink : .white))
+                .fill(isHolo ? Color(hex: 0x3A1E2C) : (isDark ? Color.plum : .white))
             if isHolo {
                 // Sits under the content so the sparkle never covers the dish or the text.
                 HolographicFoil(tilt: tilt, time: time, unit: unit)
@@ -66,7 +66,7 @@ struct RecipeCardView: View {
         }
         .background {
             RoundedRectangle(cornerRadius: 24 * unit)
-                .fill(Color.ink)
+                .fill(tier == .rare ? Color.periwinkle : Color.ink)
                 .offset(x: shadowOffset * unit, y: shadowOffset * unit)
                 .opacity(shadowOffset > 0 ? 1 : 0)
         }
@@ -90,12 +90,12 @@ struct RecipeCardView: View {
     }
 
     private var art: some View {
-        InkGlyphView(emoji: recipe.emoji, size: glyphSize * unit)
-            .background {
-                if tier >= .epic {
-                    Circle().fill(.white).padding(-16 * unit)
-                }
-            }
+        // Each dish sits inside a bubble colored by what kind of food it is.
+        GlyphBubble(
+            emoji: recipe.emoji,
+            diameter: glyphSize * unit,
+            fill: tier == .legendary ? .white : nil
+        )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { TierBackdrop(tier: tier, tilt: tilt, unit: unit) }
             .overlay(alignment: .bottomLeading) { tierLabel }
@@ -105,13 +105,12 @@ struct RecipeCardView: View {
     @ViewBuilder
     private var tierLabel: some View {
         if tier > .common {
-            let isFilled = tier == .rare
             Text(tier.name)
                 .font(.display(12 * unit))
-                .foregroundStyle(isFilled ? .white : Color.ink)
+                .foregroundStyle(Color.ink)
                 .padding(.horizontal, 10 * unit)
                 .padding(.vertical, 5 * unit)
-                .background(isFilled ? Color.ink : .white, in: .capsule)
+                .background(tier == .legendary ? Color.white : tier.accent, in: .capsule)
                 .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5 * unit) }
                 .padding(8 * unit)
         }
@@ -119,11 +118,11 @@ struct RecipeCardView: View {
 
     private var glyphSize: CGFloat {
         switch tier {
-        case .common: 84
-        case .uncommon: 112
-        case .rare: 132
-        case .epic: 128
-        case .legendary: 136
+        case .common: 120
+        case .uncommon: 138
+        case .rare: 150
+        case .epic: 154
+        case .legendary: 160
         }
     }
 
@@ -181,9 +180,9 @@ private struct TierBackdrop: View {
     var body: some View {
         switch tier {
         case .common:
-            Color.clear
+            Color.oat
         case .uncommon:
-            Color.gray1
+            Color.mint.opacity(0.6)
         case .rare:
             Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -194,16 +193,16 @@ private struct TierBackdrop: View {
                         // Halftone: dots grow toward the panel's edges.
                         let radius = 3.6 * unit * hypot(x - center.x, y - center.y) / reach
                         let dot = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
-                        context.fill(Path(ellipseIn: dot), with: .color(.ink))
+                        context.fill(Path(ellipseIn: dot), with: .color(.periwinkle))
                     }
                 }
             }
-            .background(Color.white)
+            .background(Color(hex: 0xE9F0FC))
         case .epic:
             Canvas { context, size in
-                drawRays(in: &context, size: size, color: .white)
+                drawRays(in: &context, size: size, color: .grape.opacity(0.6))
             }
-            .background(Color.ink)
+            .background(Color(hex: 0x4A2538))
         case .legendary:
             ZStack {
                 Color.white
@@ -307,13 +306,35 @@ struct CardBackView: View {
         RoundedRectangle(cornerRadius: 24 * unit)
             .fill(Color.ink)
             .overlay {
+                // A slow-turning color wheel behind the chef, so the back looks like a prize, not a blank.
+                AngularGradient(colors: Color.accents + [Color.accents[0]], center: .center)
+                    .opacity(0.9)
+                    .mask {
+                        Canvas { context, size in
+                            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                            let reach = hypot(size.width, size.height)
+                            for index in 0..<16 {
+                                let start = Double(index) / 16 * 2 * .pi
+                                var ray = Path()
+                                ray.move(to: center)
+                                ray.addLine(to: CGPoint(x: center.x + cos(start) * reach, y: center.y + sin(start) * reach))
+                                ray.addLine(to: CGPoint(x: center.x + cos(start + .pi / 16) * reach, y: center.y + sin(start + .pi / 16) * reach))
+                                context.fill(ray, with: .color(.white))
+                            }
+                        }
+                    }
+                    .padding(10 * unit)
+                    .clipShape(.rect(cornerRadius: 16 * unit))
+            }
+            .overlay {
                 VStack(spacing: 14 * unit) {
-                    ChefCharacter(size: 130 * unit, showsSparkles: false)
-                        .padding(20 * unit)
-                        .background(.white, in: .circle)
+                    ChefBubble(diameter: 160 * unit, lineWidth: 4 * unit)
                     Text("Supper Club")
                         .font(.display(24 * unit))
                         .foregroundStyle(.white)
+                        .padding(.horizontal, 14 * unit)
+                        .padding(.vertical, 6 * unit)
+                        .background(Color.ink, in: .capsule)
                 }
             }
             .overlay {
@@ -322,10 +343,10 @@ struct CardBackView: View {
                     .padding(10 * unit)
             }
             .overlay(alignment: .topLeading) {
-                Sparkle().fill(.white).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
+                Sparkle().fill(Color.lemon).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
             }
             .overlay(alignment: .bottomTrailing) {
-                Sparkle().fill(.white).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
+                Sparkle().fill(Color.lemon).frame(width: 26 * unit, height: 26 * unit).padding(26 * unit)
             }
             .frame(width: width, height: width * 1.4)
             .accessibilityLabel("Face-down card")

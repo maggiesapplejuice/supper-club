@@ -14,6 +14,14 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .profile: "person.fill"
         }
     }
+
+    var color: Color {
+        switch self {
+        case .discover: .mint
+        case .inventory: .butter
+        case .profile: .blush
+        }
+    }
 }
 
 struct MainTabView: View {
@@ -41,10 +49,10 @@ struct InkTabBar: View {
                     VStack(spacing: 4) {
                         Image(systemName: item.systemImage)
                             .font(.system(size: 18))
-                            .foregroundStyle(isSelected ? .white : Color.ink)
+                            .foregroundStyle(Color.ink)
                             .frame(width: 54, height: 54)
-                            .background(isSelected ? Color.ink : .white, in: .circle)
-                            .overlay { Circle().stroke(Color.ink, lineWidth: 2) }
+                            .background(isSelected ? item.color : Color.gray1, in: Leaf.button(20))
+                            .scaleEffect(isSelected ? 1.08 : 1)
                         Text(item.rawValue)
                             .font(isSelected ? .display(11) : .text(11))
                             .foregroundStyle(Color.ink)
@@ -56,6 +64,8 @@ struct InkTabBar: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
         .background(Color.paper)
+        .animation(.spring(duration: 0.3, bounce: 0.5), value: selection)
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }
 
@@ -68,13 +78,13 @@ struct InkChip: View {
         Button(action: action) {
             Text(title)
                 .font(isSelected ? .display(13) : .text(13))
-                .foregroundStyle(isSelected ? .white : Color.ink)
+                .foregroundStyle(Color.ink)
                 .padding(.horizontal, 14)
                 .frame(height: 34)
-                .background(isSelected ? Color.ink : .white, in: .capsule)
-                .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+                .background(isSelected ? Color.butter : Color.gray1, in: Leaf.button(14))
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
 
@@ -112,7 +122,7 @@ struct InkSearchField: View {
         .padding(.horizontal, 16)
         .frame(height: 46)
         .background(.white, in: .capsule)
-        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
     }
 }
 
@@ -174,7 +184,7 @@ struct InventoryView: View {
         .foregroundStyle(Color.ink)
         .padding(14)
         .background(Color.gray1, in: .rect(cornerRadius: 20))
-        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.ink, lineWidth: 2) }
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.gray2, lineWidth: 1.5) }
         .accessibilityElement(children: .combine)
     }
 }
@@ -193,7 +203,7 @@ struct ProfileView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
-                ChefCharacter(size: 150)
+                ChefBubble(diameter: 150)
                 VStack(spacing: 4) {
                     Text(model.experience?.rawValue ?? "Home Cook")
                         .font(.display(30))
@@ -210,7 +220,7 @@ struct ProfileView: View {
                 section("Skill level", edit: .skill) {
                     if let experience = model.experience {
                         HStack(spacing: 12) {
-                            InkGlyphView(emoji: experience.emoji, size: 40)
+                            GlyphBubble(emoji: experience.emoji, diameter: 44)
                             Text(experience.rawValue)
                                 .font(.display(16))
                                 .foregroundStyle(Color.ink)
@@ -227,7 +237,7 @@ struct ProfileView: View {
                         FlowLayout {
                             ForEach(cuisineOptions.filter { model.cuisines.contains($0.name) }) { cuisine in
                                 HStack(spacing: 6) {
-                                    InkGlyphView(emoji: cuisine.emoji, size: 22)
+                                    GlyphBubble(emoji: cuisine.emoji, diameter: 24, fill: cuisineBubbleColors[cuisine.name])
                                     Text(cuisine.name).font(.display(13))
                                 }
                             }
@@ -257,7 +267,7 @@ struct ProfileView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.white, in: .rect(cornerRadius: 22))
-                .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.ink, lineWidth: 2) }
+                .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.gray2, lineWidth: 1.5) }
             }
             .padding(20)
             .frame(maxWidth: .infinity)
@@ -290,7 +300,7 @@ struct ProfileView: View {
                         .foregroundStyle(Color.ink)
                         .padding(.horizontal, 14)
                         .frame(height: 30)
-                        .overlay { Capsule().stroke(Color.ink, lineWidth: 2) }
+                        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
                 }
                 .accessibilityLabel("Edit \(title.lowercased())")
             }
@@ -299,7 +309,7 @@ struct ProfileView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white, in: .rect(cornerRadius: 22))
-        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.ink, lineWidth: 2) }
+        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Color.gray2, lineWidth: 1.5) }
     }
 
     private func emptyNote(_ text: String) -> some View {
@@ -370,7 +380,7 @@ struct ProfileView: View {
         }
         .foregroundStyle(Color.ink)
         .frame(maxWidth: .infinity, minHeight: 82)
-        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.ink, lineWidth: 2) }
+        .overlay { RoundedRectangle(cornerRadius: 20).stroke(Color.gray2, lineWidth: 1.5) }
         .accessibilityElement(children: .combine)
     }
 }
@@ -383,6 +393,6 @@ private struct ProfileTag: ViewModifier {
             .padding(.horizontal, 12)
             .frame(height: 32)
             .background(Color.gray1, in: .capsule)
-            .overlay { Capsule().stroke(Color.ink, lineWidth: 1.5) }
+            .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
     }
 }

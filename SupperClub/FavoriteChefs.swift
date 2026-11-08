@@ -15,7 +15,7 @@ struct FavoriteChefButton: View {
                 .foregroundStyle(isFavorite ? .white : Color.ink)
                 .frame(width: size, height: size)
                 .background(isFavorite ? Color.ink : .white, in: .circle)
-                .overlay { Circle().stroke(Color.ink, lineWidth: 1.5) }
+                .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
                 .contentTransition(.symbolEffect(.replace))
         }
         .buttonStyle(.plain)
@@ -37,7 +37,7 @@ struct FavoriteChefsList: View {
             VStack(spacing: 12) {
                 ForEach(model.favoriteChefs, id: \.self) { chef in
                     HStack(spacing: 10) {
-                        InkGlyphView(emoji: "👩‍🍳", size: 34)
+                        GlyphBubble(emoji: "👩‍🍳", diameter: 38, fill: .blush)
                         VStack(alignment: .leading, spacing: 0) {
                             Text(chef.name)
                                 .font(.display(14))
