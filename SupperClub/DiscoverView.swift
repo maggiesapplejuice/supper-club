@@ -15,6 +15,9 @@ struct DiscoverView: View {
         case discover = "Discover"
         case trading = "Trading"
         var id: Self { self }
+
+        /// Pink for browsing, green for trades.
+        var color: Color { self == .discover ? .rose : .sage }
     }
 
     @State private var path: [DiscoverRoute] = []
@@ -106,7 +109,7 @@ struct DiscoverView: View {
                     .font(.system(size: 15))
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.ink, in: .circle)
+                    .background(Color.sage, in: .circle)
             }
             .accessibilityLabel("Trade updates")
         }
@@ -121,13 +124,15 @@ struct DiscoverView: View {
                         .font(segment == item ? .display(14) : .text(14))
                         .foregroundStyle(segment == item ? .white : Color.ink)
                         .frame(maxWidth: .infinity, minHeight: 38)
-                        .background(segment == item ? Color.ink : .clear, in: .capsule)
+                        .background(segment == item ? item.color : .clear, in: .capsule)
                 }
                 .accessibilityAddTraits(segment == item ? .isSelected : [])
             }
         }
         .padding(4)
-        .overlay { Capsule().stroke(Color.gray2, lineWidth: 1.5) }
+        .background(Color.gray1, in: .capsule)
+        .animation(.spring(duration: 0.3, bounce: 0.3), value: segment)
+        .sensoryFeedback(.selection, trigger: segment)
         .padding(.horizontal, 20)
     }
 
