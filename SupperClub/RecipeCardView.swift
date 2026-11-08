@@ -70,6 +70,10 @@ struct RecipeCardView: View {
                 .offset(x: shadowOffset * unit, y: shadowOffset * unit)
                 .opacity(shadowOffset > 0 ? 1 : 0)
         }
+        // Padding keeps the offset tier shadow inside the flattened layer instead of clipping it.
+        .padding(14 * unit)
+        .drawingGroup()
+        .padding(-14 * unit)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(recipe.name), \(tier.name) \(recipe.cuisine) recipe card")
     }
@@ -272,7 +276,7 @@ struct HolographicFoil: View {
     }
 
     private func drawStars(in context: inout GraphicsContext, size: CGSize) {
-        for index in 0..<340 {
+        for index in 0..<180 {
             // Fixed pseudo-random placement, so stars stay put and only their shine changes.
             let seed = Double(index)
             let x = (sin(seed * 12.9898) * 43758.5453).truncatingRemainder(dividingBy: 1)

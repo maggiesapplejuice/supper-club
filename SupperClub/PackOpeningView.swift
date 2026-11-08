@@ -29,6 +29,7 @@ struct PackOpeningView: View {
     @State private var detailRecipe: Recipe?
     @State private var cardsLanded = false
     @State private var tapSpin = 0.0
+    @State private var enterScale: CGFloat = 1
     @State private var tapPop: CGFloat = 1
     @State private var tapBursts = 0
 
@@ -43,11 +44,13 @@ struct PackOpeningView: View {
             Color.black
                 .ignoresSafeArea()
             // Rays only behind the sealed pack; cards are revealed on pure black.
-            LightRays(color: glowColor, speed: 0.08)
-                .opacity(stage == .sealed || stage == .bursting ? 0.9 : 0)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-                .animation(.easeInOut(duration: 0.5), value: glowColor)
+            if stage == .sealed || stage == .bursting {
+                LightRays(color: glowColor, speed: 0.08)
+                    .opacity(0.9)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
             switch stage {
             case .sealed, .bursting: packStage
             case .reveal: revealStage
@@ -260,7 +263,7 @@ struct PackOpeningView: View {
                 }
             }
             .rotation3DEffect(.degrees(flipAngle + tapSpin), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
-            .scaleEffect(tapPop)
+            .scaleEffect(tapPop * enterScale)
             .background { ShockRings(trigger: tapBursts, color: glowColor) }
             .rotationEffect(.degrees(Double(dragX) / 18 + shake * 0.3))
             .offset(x: dragX + shake)
@@ -310,10 +313,12 @@ struct PackOpeningView: View {
     }
 
     private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 12)
+        DragGesture(minimumDistance: 8)
             .onChanged { value in
                 guard isFaceUp, !isFlipping else { return }
-                dragX = value.translation.width
+                var instant = Transaction()
+                instant.disablesAnimations = true
+                withTransaction(instant) { dragX = value.translation.width }
             }
             .onEnded { value in
                 guard isFaceUp, !isFlipping else { return }
@@ -331,8 +336,14 @@ struct PackOpeningView: View {
         Task {
             try? await Task.sleep(for: .seconds(0.2))
             if index + 1 < recipes.count {
-                dragX = 0
-                withAnimation(.spring(duration: 0.45, bounce: 0.5)) { index += 1 }
+                var instant = Transaction()
+                instant.disablesAnimations = true
+                withTransaction(instant) {
+                    dragX = 0
+                    enterScale = 0.9
+                    index += 1
+                }
+                withAnimation(.spring(duration: 0.4, bounce: 0.35)) { enterScale = 1 }
                 arrive(at: index)
             } else {
                 withAnimation(.easeOut(duration: 0.3)) { stage = .summary }
@@ -507,6 +518,13 @@ struct PackOpeningView: View {
         let now = Date()
         sparks.removeAll { now.timeIntervalSince($0.born) > $0.life }
         sparks.append(contentsOf: new)
+        // Once the longest-lived spark is gone, empty the list so the spark layer pauses.
+        let longest = new.map(\.life).max() ?? 0
+        Task {
+            try? await Task.sleep(for: .seconds(longest + 0.05))
+            let later = Date()
+            sparks.removeAll { later.timeIntervalSince($0.born) > $0.life }
+        }
     }
 
     // Sparks are drawn across the full screen, so these approximate the pack's screen position.
