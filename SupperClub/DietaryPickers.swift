@@ -86,7 +86,7 @@ struct RestrictionPicker: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 18)
                         .frame(height: 46)
-                        .background(Color.ink, in: .capsule)
+                        .background(Color.rose, in: .capsule)
                         .opacity(trimmedCustom.isEmpty ? 0.3 : 1)
                         .disabled(trimmedCustom.isEmpty)
                 }

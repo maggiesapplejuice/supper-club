@@ -106,14 +106,14 @@ struct DiscoverGlobe: View {
         Button { onSwipe(nil) } label: {
             HStack(spacing: 8) {
                 Sparkle().fill(.white).frame(width: 13, height: 13)
-                Text("Swipe through all \(recipes.count) dishes")
-                    .font(.display(15))
+                Text("Swipe through all \(recipes.count) dishes".uppercased())
+                    .tracking(1.2)
                     .lineLimit(1)
             }
+            .font(.label(15))
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .background(Color.ink, in: .capsule)
-            .overlay { Capsule().stroke(.white, lineWidth: 2) }
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(Color.rose, in: Leaf.button())
         }
         .accessibilityHint("Or tap a pin to see one city's dishes")
     }
@@ -157,13 +157,15 @@ struct DiscoverGlobe: View {
             Button { onSwipe(city) } label: {
                 HStack(spacing: 8) {
                     Sparkle().fill(.white).frame(width: 12, height: 12)
-                    Text("Swipe through \(city.name)'s dishes")
-                        .font(.display(14))
+                    Text("Swipe through \(city.name)'s dishes".uppercased())
+                        .font(.label(14))
+                        .tracking(1.2)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(Color.ink, in: .capsule)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(Color.rose, in: Leaf.button())
             }
         }
         .padding(14)
@@ -211,7 +213,7 @@ private struct CityPin: View {
                             .font(.display(10))
                             .foregroundStyle(.white)
                             .frame(minWidth: 18, minHeight: 18)
-                            .background(Color.ink, in: .circle)
+                            .background(Color.rose, in: .circle)
                             .overlay { Circle().stroke(.white, lineWidth: 1.5) }
                             .offset(x: 5, y: -5)
                     }

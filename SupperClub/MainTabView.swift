@@ -15,11 +15,12 @@ enum MainTab: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Each tab's fill when selected, from the design system's brights.
     var color: Color {
         switch self {
-        case .discover: .mint
-        case .inventory: .butter
-        case .profile: .blush
+        case .discover: .rose
+        case .inventory: .sunflower
+        case .profile: .sage
         }
     }
 }
@@ -49,13 +50,13 @@ struct InkTabBar: View {
                     VStack(spacing: 4) {
                         Image(systemName: item.systemImage)
                             .font(.system(size: 18))
-                            .foregroundStyle(Color.ink)
+                            .foregroundStyle(isSelected ? Color.white : Color.gray4)
                             .frame(width: 54, height: 54)
                             .background(isSelected ? item.color : Color.gray1, in: Leaf.button(20))
                             .scaleEffect(isSelected ? 1.08 : 1)
                         Text(item.rawValue)
-                            .font(isSelected ? .display(11) : .text(11))
-                            .foregroundStyle(Color.ink)
+                            .font(isSelected ? .label(12) : .text(12))
+                            .foregroundStyle(isSelected ? item.color : Color.gray4)
                     }
                 }
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -331,7 +332,7 @@ struct ProfileView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 18)
                         .frame(height: 38)
-                        .background(Color.ink, in: .capsule)
+                        .background(Color.rose, in: .capsule)
                 }
             }
             .padding(20)

@@ -249,7 +249,7 @@ private struct InterestedRow: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 14)
                             .frame(height: 36)
-                            .background(Color.ink, in: .capsule)
+                            .background(Color.rose, in: .capsule)
                     }
                     Button(action: onRemove) {
                         Image(systemName: "xmark")
@@ -281,7 +281,7 @@ private struct TradeRow: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .frame(height: 24)
-                    .background(Color.ink, in: .capsule)
+                    .background(Color.rose, in: .capsule)
                 Spacer()
                 Text("to \(trade.requested.owner.shortName)")
                     .font(.text(13))

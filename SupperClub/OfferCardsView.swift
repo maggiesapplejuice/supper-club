@@ -211,7 +211,7 @@ struct OfferCardsView: View {
                 .font(.system(size: 15, weight: .black))
                 .foregroundStyle(.white)
                 .frame(width: 42, height: 42)
-                .background(Color.ink, in: .circle)
+                .background(Color.rose, in: .circle)
                 .overlay { Circle().stroke(Color.paper, lineWidth: 3) }
                 .offset(y: 14)
                 .accessibilityHidden(true)
@@ -238,10 +238,10 @@ struct OfferCardsView: View {
             RecipeCardView(recipe: card, width: 34)
             Text(card.tier.name.uppercased())
                 .font(.display(9))
-                .foregroundStyle(card.tier >= .rare ? .white : Color.ink)
+                .foregroundStyle(card.tier == .epic ? .white : Color.ink)
                 .padding(.horizontal, 7)
                 .frame(height: 20)
-                .background(card.tier >= .rare ? Color.ink : .white, in: .rect(cornerRadius: 5))
+                .background(card.tier >= .rare ? card.tier.accent : .white, in: .rect(cornerRadius: 5))
                 .overlay { RoundedRectangle(cornerRadius: 5).stroke(Color.gray2, lineWidth: 1.5) }
             Text(card.name)
                 .font(.display(14))
@@ -252,7 +252,7 @@ struct OfferCardsView: View {
                 .font(.system(size: 10, weight: .black))
                 .foregroundStyle(.white)
                 .frame(width: 22, height: 22)
-                .background(Color.ink, in: .circle)
+                .background(Color.rose, in: .circle)
                 .accessibilityHidden(true)
         }
         .padding(.vertical, 6)
@@ -328,7 +328,7 @@ private struct OfferTile: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .frame(height: 24)
-                    .background(Color.ink, in: .capsule)
+                    .background(Color.rose, in: .capsule)
                     .offset(x: -4, y: -6)
             }
         }

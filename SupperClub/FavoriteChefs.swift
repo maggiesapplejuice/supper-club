@@ -14,7 +14,7 @@ struct FavoriteChefButton: View {
                 .font(.system(size: size * 0.45, weight: .bold))
                 .foregroundStyle(isFavorite ? .white : Color.ink)
                 .frame(width: size, height: size)
-                .background(isFavorite ? Color.ink : .white, in: .circle)
+                .background(isFavorite ? Color.sunflower : .white, in: .circle)
                 .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
                 .contentTransition(.symbolEffect(.replace))
         }

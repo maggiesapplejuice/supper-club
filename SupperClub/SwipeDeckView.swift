@@ -84,7 +84,7 @@ struct SwipeDeckView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.ink, in: .circle)
+                    .background(Color.rose, in: .circle)
             }
             .accessibilityLabel("Open Trading")
         }
@@ -132,7 +132,7 @@ struct SwipeDeckView: View {
             .foregroundStyle(filled ? .white : Color.ink)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(filled ? Color.ink : .white, in: .rect(cornerRadius: 12))
+            .background(filled ? Color.rose : .white, in: .rect(cornerRadius: 12))
             .overlay { RoundedRectangle(cornerRadius: 12).stroke(filled ? .white : Color.ink, lineWidth: 3) }
     }
 
@@ -214,7 +214,7 @@ struct SwipeDeckView: View {
                 .font(.system(size: size * 0.34, weight: .bold))
                 .foregroundStyle(filled ? .white : Color.ink)
                 .frame(width: size, height: size)
-                .background(filled ? Color.ink : .white, in: .circle)
+                .background(filled ? Color.rose : .white, in: .circle)
                 .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
         }
         .accessibilityLabel(label)
@@ -253,7 +253,7 @@ struct SwipeDeckView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .frame(height: 40)
-                .background(Color.ink, in: .capsule)
+                .background(Color.rose, in: .capsule)
             }
             .padding(.top, 58)
             .padding(.horizontal, 20)

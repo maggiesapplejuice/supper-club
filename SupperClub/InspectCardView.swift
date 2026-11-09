@@ -83,7 +83,7 @@ struct InspectCardView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .frame(height: 30)
-                    .background(Color.ink, in: .capsule)
+                    .background(Color.rose, in: .capsule)
                 }
                 .accessibilityHint("Shows what makes up this rarity")
                 Text("traded \(recipe.timesTraded) times")
@@ -107,7 +107,7 @@ struct InspectCardView: View {
                         .font(.system(size: 11, weight: .black))
                         .foregroundStyle(.white)
                         .frame(width: 20, height: 20)
-                        .background(Color.ink, in: .circle)
+                        .background(Color.rose, in: .circle)
                 }
                 Text(conflicts.isEmpty ? "Fits your diet" : "Doesn't fit your diet")
                     .font(.display(15))
@@ -245,7 +245,7 @@ struct InspectCardView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(isSaved ? .white : Color.ink)
                     .frame(width: 56, height: 56)
-                    .background(isSaved ? Color.ink : .white, in: .circle)
+                    .background(isSaved ? Color.rose : .white, in: .circle)
                     .overlay { Circle().stroke(Color.gray2, lineWidth: 1.5) }
             }
             .accessibilityLabel(isSaved ? "Remove from saved" : "Save card")
