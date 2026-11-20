@@ -4,6 +4,15 @@ An iOS app for collecting and trading recipes as cards. Recipes get passed betwe
 
 Built in SwiftUI for iOS 26.
 
+<p>
+  <img src="design/flows/screens/07-pack-sealed.png" width="200" alt="Sealed starter pack">
+  <img src="design/flows/screens/10-pack-legendary.png" width="200" alt="Legendary card before the flip">
+  <img src="design/flows/screens/13-discover-globe.png" width="200" alt="Discover globe">
+  <img src="design/flows/screens/18-offer-cards.png" width="200" alt="Offering cards for a trade">
+</p>
+
+All 22 screens are in [`design/flows/screens`](design/flows/screens).
+
 ## How it works
 
 **Onboarding.** You sign up, then pick your cooking experience (Beginner to Professional), the cuisines you like, any dietary restrictions, and optionally your location.
